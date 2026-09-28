@@ -2,6 +2,51 @@
 
 All notable changes to Sheets. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.3.0] — 2026-09-28
+
+### AutoFill
+- **AutoFill Options** button after a fill-handle fill: Copy Cells, Fill Series,
+  Fill Formatting Only, Fill Without Formatting, Fill Days / Weekdays / Months /
+  Years (for dates) and Flash Fill. Switching is a single undo step.
+- New fill engine with Excel's rules: a single number is copied, Ctrl+drag or
+  Fill Series counts up; two or more numbers continue their best-fit line;
+  dates (including month-end dates), `Item 1`, zero-padded `ID-007`, ordinals
+  (`1st`), quarters (`Q1`–`Q4`), month and day names continue; formulas adjust;
+  filling up or left counts down; dragging back inside the selection clears it.
+- Double-click the fill handle to fill to the end of the adjacent data.
+- Home → Fill → **Series…** (linear, growth, date by day/weekday/month/year,
+  step, stop value, trend). Ctrl+D / Ctrl+R copy exactly, like Excel.
+- **Flash Fill** (Ctrl+E, Data → Flash Fill): learns a text transformation from
+  one or two examples and fills the column.
+
+### Paste
+- **Paste Special** dialog (Ctrl+Alt+V): all, formulas, values, formats, all
+  except borders, column widths, formulas/values with number formats; Add,
+  Subtract, Multiply, Divide; Skip blanks; Transpose (references inside the
+  copied block follow it); Paste Link.
+- Paste menu: Transpose, No Borders, Keep Source Column Widths, Values & Number
+  Formatting, Values & Source Formatting, Paste Link. Ctrl+Shift+V pastes values.
+
+### Keyboard
+- **KeyTips** (Alt or F10) for ribbon tabs and commands, using Excel's letters.
+- Ctrl+A selects the data region, then the sheet; Ctrl+Shift+Space, Ctrl+Shift+*,
+  End mode, F8 Extend Selection, Shift+Backspace, Ctrl+Backspace, Ctrl+. ,
+  Ctrl+' and Ctrl+Shift+", F4 / Ctrl+Y repeat, Cmd+Shift+Z redo on the Mac,
+  Ctrl+[ go to precedents, Shift+F4 / Ctrl+Shift+F4 find next / previous,
+  F3 Paste Name, Ctrl+F3 Name Manager, Ctrl+Shift+F3 Create Names from
+  Selection, Ctrl+Shift+F / P font settings, Ctrl+Shift+~ General format,
+  Ctrl+Shift+( and ) unhide, Ctrl+Tab / Ctrl+F6 next window, Ctrl+Alt+= / -
+  zoom, F11 chart, Alt+Shift+F1 new sheet, Shift+F10 / Menu key context menu,
+  F1 shortcut reference. While editing: Ctrl+Shift+A argument names,
+  Ctrl+Delete, Ctrl+Shift+Enter.
+- **AutoComplete** for text entries from the same column and **Alt+↓** pick list.
+- Searchable Keyboard Shortcuts reference (F1, Help tab).
+
+### Fixed
+- Ctrl+Shift+U toggled underline instead of expanding the formula bar.
+- Ctrl+Shift+~ showed formulas instead of applying the General format.
+- Ctrl+Shift+( / ) did not unhide on US keyboard layouts.
+
 ## [0.2.0] — 2026-09-28
 
 ### Reliability

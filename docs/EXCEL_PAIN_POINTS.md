@@ -6,7 +6,7 @@ But decades of backwards compatibility have left well-documented failure modes
 that cost real money and real research. This document collects them, with
 sources, and records how Sheets answers each one.
 
-Status legend: ✅ shipped in Sheets 0.2 · 🟡 partly addressed · 🗺️ on the [roadmap](ROADMAP.md)
+Status legend: ✅ shipped · 🟡 partly addressed · 🗺️ on the [roadmap](ROADMAP.md)
 
 ---
 

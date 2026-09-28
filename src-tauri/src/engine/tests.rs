@@ -1,4 +1,12 @@
-use super::{a1::Rect, dto::StylePatch, test_config, FindOptions, Session, SortKey};
+use super::{a1::Rect, dto::StylePatch, test_config, FillMode, FindOptions, SeriesSpec, Session, SortKey};
+
+fn number(s: &Session, row: i32, col: i32) -> f64 {
+    s.range_values(0, Rect::cell(row, col)).unwrap()[0][0].0.unwrap()
+}
+
+fn column(s: &Session, r1: i32, r2: i32, col: i32) -> Vec<String> {
+    (r1..=r2).map(|r| s.cell_info(0, r, col).unwrap().formatted).collect()
+}
 
 fn session() -> Session {
     let model = test_config().new_model("Book1").unwrap();
@@ -269,12 +277,169 @@ fn autofill_series() {
     let mut s = session();
     s.set_input(0, 1, 1, "1", true).unwrap();
     s.set_input(0, 2, 1, "2", true).unwrap();
-    s.auto_fill(0, Rect::new(1, 1, 2, 1), Rect::new(1, 1, 5, 1)).unwrap();
+    s.fill(0, Rect::new(1, 1, 2, 1), Rect::new(1, 1, 5, 1), FillMode::Auto).unwrap();
     assert_eq!(text(&s, 5, 1), "5");
     s.set_input(0, 1, 2, "Mon", true).unwrap();
     s.set_input(0, 2, 2, "Tue", true).unwrap();
-    s.auto_fill(0, Rect::new(1, 2, 2, 2), Rect::new(1, 2, 3, 2)).unwrap();
+    s.fill(0, Rect::new(1, 2, 2, 2), Rect::new(1, 2, 3, 2), FillMode::Auto).unwrap();
     assert_eq!(text(&s, 3, 2), "Wed");
+}
+
+#[test]
+fn autofill_single_number_and_options() {
+    let mut s = session();
+    s.set_input(0, 1, 1, "1", true).unwrap();
+    s.apply_style(0, Rect::cell(1, 1), &StylePatch { bold: Some(true), ..Default::default() }).unwrap();
+    // Excel: dragging one number copies it…
+    let r = s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 8, 1), FillMode::Auto).unwrap();
+    assert_eq!(r.mode, FillMode::Copy);
+    assert!(r.can_series && !r.has_dates);
+    assert_eq!(column(&s, 1, 8, 1), ["1"; 8]);
+    assert!(s.cell_info(0, 8, 1).unwrap().style.bold);
+    // …and AutoFill Options → Fill Series (one undo step) counts up
+    s.undo().unwrap();
+    assert_eq!(text(&s, 2, 1), "");
+    let r = s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 8, 1), FillMode::Series).unwrap();
+    assert_eq!(r.mode, FillMode::Series);
+    assert_eq!(column(&s, 1, 8, 1), ["1", "2", "3", "4", "5", "6", "7", "8"]);
+    // Ctrl+drag does the same
+    s.undo().unwrap();
+    s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 3, 1), FillMode::Toggle).unwrap();
+    assert_eq!(column(&s, 1, 3, 1), ["1", "2", "3"]);
+    // Fill Formatting Only leaves values alone
+    s.set_input(0, 5, 1, "x", true).unwrap();
+    s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 5, 1), FillMode::Formats).unwrap();
+    assert_eq!(text(&s, 5, 1), "x");
+    assert!(s.cell_info(0, 5, 1).unwrap().style.bold);
+    // Fill Without Formatting keeps the target's format
+    s.set_input(0, 1, 3, "5", true).unwrap();
+    s.set_input(0, 2, 3, "10", true).unwrap();
+    s.apply_style(0, Rect::new(1, 3, 2, 3), &StylePatch { italic: Some(true), ..Default::default() }).unwrap();
+    s.fill(0, Rect::new(1, 3, 2, 3), Rect::new(1, 3, 4, 3), FillMode::Values).unwrap();
+    assert_eq!(column(&s, 1, 4, 3), ["5", "10", "15", "20"]);
+    assert!(!s.cell_info(0, 4, 3).unwrap().style.italic);
+}
+
+#[test]
+fn autofill_patterns() {
+    let mut s = session();
+    let put = |s: &mut Session, col: i32, values: &[&str]| {
+        for (i, v) in values.iter().enumerate() {
+            s.set_input(0, i as i32 + 1, col, v, true).unwrap();
+        }
+    };
+    // Text with numbers, zero padding, ordinals, quarters, names
+    put(&mut s, 1, &["Item 1"]);
+    put(&mut s, 2, &["ID-007"]);
+    put(&mut s, 3, &["1st"]);
+    put(&mut s, 4, &["Q3"]);
+    put(&mut s, 5, &["January"]);
+    put(&mut s, 6, &["FRI"]);
+    put(&mut s, 7, &["Jan", "Apr"]);
+    put(&mut s, 8, &["2", "4", "8"]);
+    put(&mut s, 9, &["0.1", "0.2"]);
+    put(&mut s, 10, &["=ROW()*2"]);
+    put(&mut s, 11, &["a", "1"]);
+    put(&mut s, 12, &["007"]);
+    for col in 1..=12 {
+        let seeds = if matches!(col, 7 | 9 | 11) { 2 } else if col == 8 { 3 } else { 1 };
+        s.fill(0, Rect::new(1, col, seeds, col), Rect::new(1, col, 6, col), FillMode::Auto).unwrap();
+    }
+    assert_eq!(column(&s, 1, 3, 1), ["Item 1", "Item 2", "Item 3"]);
+    assert_eq!(column(&s, 1, 3, 2), ["ID-007", "ID-008", "ID-009"]);
+    assert_eq!(column(&s, 1, 4, 3), ["1st", "2nd", "3rd", "4th"]);
+    assert_eq!(column(&s, 1, 4, 4), ["Q3", "Q4", "Q1", "Q2"]);
+    assert_eq!(column(&s, 1, 3, 5), ["January", "February", "March"]);
+    assert_eq!(column(&s, 1, 4, 6), ["FRI", "SAT", "SUN", "MON"]);
+    assert_eq!(column(&s, 1, 6, 7), ["Jan", "Apr", "Jul", "Oct", "Jan", "Apr"]);
+    // 2, 4, 8 continue their best-fit line like Excel
+    assert_eq!(column(&s, 4, 5, 8), ["10.666666667", "13.666666667"]);
+    assert_eq!(column(&s, 1, 4, 9), ["0.1", "0.2", "0.3", "0.4"]);
+    assert_eq!(column(&s, 1, 3, 10), ["2", "4", "6"]);
+    assert_eq!(s.cell_info(0, 3, 10).unwrap().content, "=ROW()*2");
+    // A number between text counts on; the text repeats
+    assert_eq!(column(&s, 1, 6, 11), ["a", "1", "a", "2", "a", "3"]);
+    // Text that looks like a number stays text
+    assert_eq!(column(&s, 1, 3, 12), ["007", "008", "009"]);
+    // Copy Cells repeats everything
+    s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 3, 1), FillMode::Copy).unwrap();
+    assert_eq!(column(&s, 1, 3, 1), ["Item 1", "Item 1", "Item 1"]);
+}
+
+#[test]
+fn autofill_dates_and_directions() {
+    let mut s = session();
+    s.set_input(0, 1, 1, "2026-01-31", true).unwrap();
+    let r = s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 3, 1), FillMode::Auto).unwrap();
+    assert!(r.has_dates);
+    assert_eq!(r.mode, FillMode::Series);
+    let serial = |s: &Session, row: i32| number(s, row, 1);
+    assert_eq!(serial(&s, 2) - serial(&s, 1), 1.0);
+    s.undo().unwrap();
+    s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 3, 1), FillMode::Months).unwrap();
+    // 31 Jan → 28 Feb → 31 Mar
+    assert_eq!(serial(&s, 2) - serial(&s, 1), 28.0);
+    assert_eq!(serial(&s, 3) - serial(&s, 1), 59.0);
+    assert_eq!(s.cell_info(0, 3, 1).unwrap().style.num_fmt, s.cell_info(0, 1, 1).unwrap().style.num_fmt);
+    s.undo().unwrap();
+    // Friday 2 Oct 2026 → Mon 5, Tue 6
+    s.set_input(0, 1, 1, "2026-10-02", true).unwrap();
+    s.fill(0, Rect::cell(1, 1), Rect::new(1, 1, 3, 1), FillMode::Weekdays).unwrap();
+    assert_eq!(serial(&s, 2) - serial(&s, 1), 3.0);
+    assert_eq!(serial(&s, 3) - serial(&s, 1), 4.0);
+    // Up and left continue backwards
+    s.set_input(0, 10, 3, "5", true).unwrap();
+    s.set_input(0, 11, 3, "6", true).unwrap();
+    s.fill(0, Rect::new(10, 3, 11, 3), Rect::new(8, 3, 11, 3), FillMode::Auto).unwrap();
+    assert_eq!(column(&s, 8, 9, 3), ["3", "4"]);
+    s.set_input(0, 20, 5, "Item 5", true).unwrap();
+    s.fill(0, Rect::cell(20, 5), Rect::new(20, 3, 20, 5), FillMode::Auto).unwrap();
+    assert_eq!(text(&s, 20, 3), "Item 3");
+    // Dragging back inside the selection clears what was left out
+    s.fill(0, Rect::new(8, 3, 11, 3), Rect::new(8, 3, 9, 3), FillMode::Auto).unwrap();
+    assert_eq!(text(&s, 10, 3), "");
+    assert_eq!(text(&s, 9, 3), "4");
+}
+
+#[test]
+fn fill_extent_and_series_dialog() {
+    let mut s = session();
+    for r in 1..=6 {
+        s.set_input(0, r, 1, &r.to_string(), true).unwrap();
+    }
+    s.set_input(0, 1, 2, "=A1*10", true).unwrap();
+    assert_eq!(s.fill_extent(0, Rect::cell(1, 2)).unwrap(), Some(6));
+    s.set_input(0, 4, 2, "stop", true).unwrap();
+    assert_eq!(s.fill_extent(0, Rect::cell(1, 2)).unwrap(), Some(3));
+    assert_eq!(s.fill_extent(0, Rect::cell(1, 5)).unwrap(), None);
+
+    // Series: linear with a stop value from a single cell
+    s.set_input(0, 1, 4, "10", true).unwrap();
+    let spec = SeriesSpec { in_rows: false, kind: "linear".into(), unit: String::new(), step: 5.0, stop: Some(30.0), trend: false };
+    let filled = s.fill_series(0, Rect::cell(1, 4), &spec).unwrap();
+    assert_eq!(filled, Rect::new(1, 4, 5, 4));
+    assert_eq!(column(&s, 1, 6, 4), ["10", "15", "20", "25", "30", ""]);
+    // Growth across a selected row
+    s.set_input(0, 10, 1, "3", true).unwrap();
+    let spec = SeriesSpec { in_rows: true, kind: "growth".into(), unit: String::new(), step: 2.0, stop: None, trend: false };
+    s.fill_series(0, Rect::new(10, 1, 10, 4), &spec).unwrap();
+    assert_eq!(text(&s, 10, 4), "24");
+    // Date series by month
+    s.set_input(0, 1, 6, "2026-01-15", true).unwrap();
+    let spec = SeriesSpec { in_rows: false, kind: "date".into(), unit: "month".into(), step: 1.0, stop: None, trend: false };
+    s.fill_series(0, Rect::new(1, 6, 3, 6), &spec).unwrap();
+    let v = |row| number(&s, row, 6);
+    assert_eq!(v(2) - v(1), 31.0);
+    assert_eq!(v(3) - v(2), 28.0);
+    // Trend continues the best-fit line of the selected values
+    s.set_input(0, 1, 8, "1", true).unwrap();
+    s.set_input(0, 2, 8, "3", true).unwrap();
+    let spec = SeriesSpec { in_rows: false, kind: "linear".into(), unit: String::new(), step: 1.0, stop: None, trend: true };
+    s.fill_series(0, Rect::new(1, 8, 4, 8), &spec).unwrap();
+    assert_eq!(column(&s, 1, 4, 8), ["1", "3", "5", "7"]);
+    // One undo step
+    s.undo().unwrap();
+    assert_eq!(text(&s, 3, 8), "");
 }
 
 #[test]
@@ -640,4 +805,81 @@ fn oversized_csv_is_reported_not_silently_truncated() {
     assert_eq!(text(&s, 1, 16_384), "16384");
     assert_eq!(text(&s, 2, 2), "2");
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn flash_fill_names() {
+    let mut s = session();
+    let rows = [("Full name", "Last"), ("John Smith", "Smith"), ("Mary Ann Lee", ""), ("Ada Lovelace", ""), ("Alan Turing", "")];
+    for (i, (a, b)) in rows.iter().enumerate() {
+        s.set_input(0, i as i32 + 1, 1, a, true).unwrap();
+        if !b.is_empty() {
+            s.set_input(0, i as i32 + 1, 2, b, true).unwrap();
+        }
+    }
+    let r = s.flash_fill(0, 2, 2).unwrap();
+    assert_eq!(r.count, 3);
+    assert_eq!(r.rect, Rect::new(3, 2, 5, 2));
+    assert_eq!(column(&s, 1, 5, 2), ["Last", "Smith", "Lee", "Lovelace", "Turing"]);
+    // One undo step
+    s.undo().unwrap();
+    assert_eq!(text(&s, 4, 2), "");
+    // Without an example there is nothing to learn from
+    assert!(s.flash_fill(0, 1, 3).is_err());
+}
+
+#[test]
+fn paste_special_options() {
+    use super::PasteSpecial;
+    let mut s = session();
+    let opts = |what: &str, op: &str, skip: bool, transpose: bool| PasteSpecial {
+        what: what.into(),
+        operation: op.into(),
+        skip_blanks: skip,
+        transpose,
+    };
+    // A1:B2 = 1, 2 / =A1*10, (blank)
+    s.set_input(0, 1, 1, "1", true).unwrap();
+    s.set_input(0, 1, 2, "2", true).unwrap();
+    s.set_input(0, 2, 1, "=A1*10", true).unwrap();
+    s.apply_style(0, Rect::new(1, 1, 2, 2), &StylePatch { bold: Some(true), ..Default::default() }).unwrap();
+    let clip = s.copy(0, Rect::new(1, 1, 2, 2), false).unwrap();
+
+    // Transpose: rows become columns, the formula still points at its source cell
+    let out = s.paste_special(0, Rect::cell(5, 1), &clip, &opts("all", "none", false, true)).unwrap();
+    assert_eq!(out, Rect::new(5, 1, 6, 2));
+    assert_eq!(column(&s, 5, 6, 1), ["1", "2"]);
+    assert_eq!(s.cell_info(0, 5, 2).unwrap().content, "=A5*10");
+    assert_eq!(text(&s, 5, 2), "10");
+    assert!(s.cell_info(0, 6, 1).unwrap().style.bold);
+
+    // Values only keep the target's format
+    s.paste_special(0, Rect::cell(10, 1), &clip, &opts("values", "none", false, false)).unwrap();
+    assert_eq!(s.cell_info(0, 11, 1).unwrap().content, "10");
+    assert!(!s.cell_info(0, 10, 1).unwrap().style.bold);
+
+    // Formats only keep the target's values
+    s.set_input(0, 20, 1, "x", true).unwrap();
+    s.paste_special(0, Rect::cell(20, 1), &clip, &opts("formats", "none", false, false)).unwrap();
+    assert_eq!(text(&s, 20, 1), "x");
+    assert!(s.cell_info(0, 20, 1).unwrap().style.bold);
+
+    // Multiply into existing numbers; skip blanks keeps what is under empty cells
+    s.set_input(0, 30, 1, "5", true).unwrap();
+    s.set_input(0, 30, 2, "7", true).unwrap();
+    s.set_input(0, 31, 2, "keep", true).unwrap();
+    s.paste_special(0, Rect::cell(30, 1), &clip, &opts("values", "multiply", true, false)).unwrap();
+    // A blank target counts as 0, like Excel
+    assert_eq!(column(&s, 30, 31, 1), ["5", "0"]);
+    assert_eq!(text(&s, 30, 2), "14");
+    assert_eq!(text(&s, 31, 2), "keep");
+
+    // Paste Link refers back to the copied cells
+    s.paste_special(0, Rect::cell(40, 1), &clip, &opts("link", "none", false, false)).unwrap();
+    assert_eq!(s.cell_info(0, 40, 2).unwrap().content, "=B1");
+    assert_eq!(text(&s, 41, 1), "10");
+
+    // One undo step per paste
+    s.undo().unwrap();
+    assert_eq!(text(&s, 40, 1), "");
 }

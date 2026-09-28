@@ -1,6 +1,6 @@
 // Menu definitions shared by the ribbon, context menus and the command search.
 
-import { api } from "../api";
+import { api, type PasteSpecialOptions } from "../api";
 import type { MenuItem } from "../components/Menu";
 import { ColorPicker } from "../components/ColorPicker";
 import { Icon } from "../components/Icon";
@@ -171,8 +171,8 @@ export function fillMenu(ctl: WorkbookController): MenuItem[] {
     { label: "Up", onClick: () => ctl.fillDirection("up") },
     { label: "Left", onClick: () => ctl.fillDirection("left") },
     { separator: true },
-    { label: "Series...", disabled: true },
-    { label: "Flash Fill", disabled: true },
+    { label: "Series...", onClick: () => ctl.ui?.dialog("series") },
+    { label: "Flash Fill", icon: "flashFill", shortcut: "Ctrl+E", onClick: () => ctl.flashFill() },
   ];
 }
 
@@ -206,15 +206,29 @@ export function findMenu(ctl: WorkbookController): MenuItem[] {
   ];
 }
 
+function special(what: PasteSpecialOptions["what"]): PasteSpecialOptions {
+  return { what, operation: "none", skipBlanks: false, transpose: false };
+}
+
 export function pasteMenu(ctl: WorkbookController): MenuItem[] {
   return [
     { header: "Paste" },
     { label: "Paste", icon: "paste", shortcut: "Ctrl+V", onClick: () => ctl.paste("all") },
     { label: "Formulas", icon: "pasteFormulas", onClick: () => ctl.paste("formulas") },
+    { label: "Formulas & Number Formatting", onClick: () => ctl.pasteSpecial(special("formulasAndNumberFormats")) },
+    { label: "Keep Source Formatting", onClick: () => ctl.paste("all") },
+    { label: "No Borders", icon: "borderNone", onClick: () => ctl.pasteSpecial(special("allExceptBorders")) },
+    { label: "Keep Source Column Widths", icon: "colWidth", onClick: () => ctl.pasteSpecial(special("all")).then(() => ctl.pasteSpecial(special("columnWidths"))) },
+    { label: "Transpose", icon: "transpose", onClick: () => ctl.pasteSpecial({ ...special("all"), transpose: true }) },
     { header: "Paste Values" },
-    { label: "Values", icon: "pasteValues", onClick: () => ctl.paste("values") },
+    { label: "Values", icon: "pasteValues", shortcut: "Ctrl+Shift+V", onClick: () => ctl.paste("values") },
+    { label: "Values & Number Formatting", onClick: () => ctl.pasteSpecial(special("valuesAndNumberFormats")) },
+    { label: "Values & Source Formatting", onClick: () => ctl.pasteSpecial(special("valuesAndSourceFormatting")) },
     { header: "Other Paste Options" },
     { label: "Formatting", icon: "pasteFormats", onClick: () => ctl.paste("formats") },
+    { label: "Paste Link", icon: "link", onClick: () => ctl.pasteSpecial(special("link")) },
+    { separator: true },
+    { label: "Paste Special...", shortcut: "Ctrl+Alt+V", onClick: () => ctl.ui?.dialog("pasteSpecial") },
   ];
 }
 
@@ -392,6 +406,7 @@ export function cellContextMenu(ctl: WorkbookController, kind: "cell" | "colHead
         </div>
       ),
     },
+    { label: "Paste Special...", shortcut: "Ctrl+Alt+V", onClick: () => ctl.ui?.dialog("pasteSpecial") },
     { separator: true },
   ];
   if (kind === "colHeader" || cols) {
@@ -453,6 +468,8 @@ export function cellContextMenu(ctl: WorkbookController, kind: "cell" | "colHead
     /^((https?:\/\/|mailto:)\S+|www\.\S+\.\S+)$/i.test((ctl.cache.get(ctl.sel.active.r, ctl.sel.active.c)?.text ?? "").trim())
       ? { label: "Open Hyperlink", icon: "link", onClick: () => ctl.openLink() }
       : { label: "Link...", icon: "link", shortcut: "Ctrl+K", onClick: () => ctl.ui?.dialog("link") },
+    { label: "Pick From Drop-down List...", shortcut: "Alt+Down", onClick: () => ctl.showPickList() },
+    { label: "Define Name...", onClick: () => ctl.ui?.dialog("defineName") },
     { separator: true },
     { label: "Format Cells...", icon: "formatCells", shortcut: "Ctrl+1", onClick: () => ctl.ui?.dialog("formatCells") },
     { label: "Define Name...", icon: "tag", onClick: () => ctl.ui?.dialog("defineName") },

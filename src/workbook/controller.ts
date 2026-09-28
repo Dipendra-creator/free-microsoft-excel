@@ -9,7 +9,12 @@ import {
   type CellsChunk,
   type ChartKind,
   type ChartSpec,
+  type FillMode,
+  type FillReport,
+  type FindOptions,
+  type PasteSpecialOptions,
   type Rect,
+  type SeriesSpec,
   type SelectionStats,
   type SheetLayout,
   type StylePatch,
@@ -17,7 +22,7 @@ import {
 } from "../api";
 import { cellName, colName, contains, isFullCols, isFullRows, LAST_COL, LAST_ROW, parseRange, rect, rectName, sameRect } from "../lib/a1";
 import { autoClose, canInsertRef, identifierAt, refEndingAt, tokenize, type RefToken } from "../lib/formula";
-import { searchFunctions, type FunctionDoc } from "../lib/functions";
+import { functionDoc, searchFunctions, syntaxParts, type FunctionDoc } from "../lib/functions";
 import { cellStyle, TABLE_STYLES, DEFAULT_TABLE_STYLE } from "../lib/galleries";
 import { nowTimeInput, todayInput } from "../lib/formats";
 import { Axis } from "./grid/axis";
@@ -96,6 +101,12 @@ export class WorkbookController {
   clip: { sheet: number; rect: Rect; cut: boolean } | null = null;
   painter: { sticky: boolean } | null = null;
   fillPreview: Rect | null = null;
+  /** AutoFill Options button shown after a fill-handle fill (cleared by the next change). */
+  fillOptions: { sheet: number; source: Rect; target: Rect; report: FillReport } | null = null;
+  /** Message shown in the status bar until the next change (e.g. Flash Fill). */
+  statusNote: string | null = null;
+  /** KeyTips shown on the ribbon (Alt / F10). */
+  keyTips: "tabs" | "controls" | null = null;
   resizeGuide: { axis: "col" | "row"; pos: number } | null = null;
   showFormulas = false;
   showHeadings = true;
@@ -169,6 +180,12 @@ export class WorkbookController {
     });
   }
 
+  setKeyTips(level: "tabs" | "controls" | null) {
+    if (this.keyTips === level) return;
+    this.keyTips = level;
+    this.emit();
+  }
+
   // ------------------------------------------------------------------
   // Loading
   // ------------------------------------------------------------------
@@ -215,6 +232,8 @@ export class WorkbookController {
 
   /** Called with the WorkbookInfo returned by every mutation. */
   async setInfo(info: WorkbookInfo) {
+    this.fillOptions = null;
+    this.statusNote = null;
     const layoutChanged = info.layoutVersion !== this.info.layoutVersion;
     const sheetsChanged = info.sheets.length !== this.info.sheets.length;
     this.info = info;
@@ -256,6 +275,7 @@ export class WorkbookController {
     this.cache.clear();
     this.scroll = { x: 0, y: 0 };
     this.fillPreview = null;
+    this.fillOptions = null;
     await this.loadLayout();
     api.activateSheet(this.id, index).catch(() => {});
     this.select(1, 1);
@@ -793,6 +813,8 @@ export class WorkbookController {
   /** Starts editing the active cell. `initial` replaces the content (typing). */
   startEdit(mode: "enter" | "edit", initial?: string, source: "cell" | "bar" = "cell") {
     if (this.edit) return;
+    this.fillOptions = null;
+    this.statusNote = null;
     const { r, c } = this.sel.active;
     const info = this.activeInfo && this.activeInfo.row === r && this.activeInfo.col === c ? this.activeInfo : null;
     if (info?.arrayAnchor && (info.arrayAnchor[0] !== r || info.arrayAnchor[1] !== c)) {
@@ -828,6 +850,7 @@ export class WorkbookController {
         })
         .catch(() => {});
     }
+    this.acEntries = null;
     this.edit = {
       row: r,
       col: c,
@@ -847,13 +870,59 @@ export class WorkbookController {
     this.emit();
   }
 
-  /** `external` = the change did not come from the input the user types in. */
-  updateEdit(text: string, caret: number, caretEnd = caret, external = false) {
+  /**
+   * `external` = the change did not come from the input the user types in;
+   * `inserted` = the user typed text (AutoComplete may complete the entry).
+   */
+  updateEdit(text: string, caret: number, caretEnd = caret, external = false, inserted = false) {
     const e = this.edit;
     if (!e) return;
     const pointStillValid = e.point && e.point.end === caret && text.slice(0, e.point.start) === e.text.slice(0, e.point.start);
     this.edit = { ...e, text, caret, caretEnd, point: pointStillValid ? e.point : null, sync: external ? this.nextSync() : e.sync };
+    if (inserted) this.autoComplete();
     this.updateSuggest();
+    this.emit();
+  }
+
+  /** Excel's AutoComplete: finish a text entry that matches exactly one entry above or below in the column. */
+  autoCompleteEnabled = true;
+  private acEntries: string[] | null = null;
+
+  private autoComplete() {
+    const e = this.edit;
+    if (!e || !this.autoCompleteEnabled || e.source !== "cell" || e.sheet !== this.sheet) return;
+    const typed = e.text;
+    if (e.caret !== typed.length || e.caretEnd !== typed.length || !typed.trim() || typed.includes("\n")) return;
+    if (/^[=+\-@]/.test(typed) || /^[\d\s.,:/%$€£¥₹()+-]+$/.test(typed)) return;
+    this.acEntries ??= this.columnEntries(1000);
+    const lower = typed.toLowerCase();
+    const matches = this.acEntries.filter((t) => t.length > typed.length && t.toLowerCase().startsWith(lower));
+    if (matches.length !== 1) return;
+    const full = typed + matches[0].slice(typed.length);
+    this.edit = { ...e, text: full, caret: typed.length, caretEnd: full.length, sync: this.nextSync() };
+  }
+
+  /** The first key typed into a cell starts the entry (and may AutoComplete it). */
+  startTyping(text: string) {
+    this.startEdit("enter", text);
+    if (!this.edit) return;
+    this.autoComplete();
+    this.emit();
+  }
+
+  /** Ctrl+Shift+A after a function name: type its argument names. */
+  insertArgumentNames() {
+    const e = this.edit;
+    if (!e) return;
+    const before = e.text.slice(0, e.caret);
+    const m = /([A-Za-z_][A-Za-z0-9_.]*)(\()?$/.exec(before);
+    const doc = m ? functionDoc(m[1]) : undefined;
+    if (!m || !doc) return;
+    const list = syntaxParts(doc.syntax).args.join(", ");
+    const open = m[2] ? "" : "(";
+    const text = before + open + list + ")" + e.text.slice(e.caretEnd);
+    const start = before.length + open.length;
+    this.edit = { ...e, text, caret: start, caretEnd: start + list.length, suggest: null, point: null, sync: this.nextSync() };
     this.emit();
   }
 
@@ -1056,6 +1125,7 @@ export class WorkbookController {
   }
 
   style(patch: StylePatch) {
+    this.lastAction = () => this.style(patch);
     return this.run(api.style(this.id, this.sheet, this.range, patch));
   }
 
@@ -1065,6 +1135,7 @@ export class WorkbookController {
   }
 
   borders(kind: string, style = "thin", color = "#000000") {
+    this.lastAction = () => this.borders(kind, style, color);
     return this.run(api.borders(this.id, this.sheet, this.range, kind, style, color));
   }
 
@@ -1098,6 +1169,7 @@ export class WorkbookController {
   }
 
   merge(mode: "center" | "across" | "merge" | "unmerge") {
+    this.lastAction = () => this.merge(mode);
     return this.run(api.merge(this.id, this.sheet, this.range, mode));
   }
 
@@ -1107,6 +1179,7 @@ export class WorkbookController {
   }
 
   clear(what: "all" | "contents" | "formats") {
+    this.lastAction = () => this.clear(what);
     return this.run(api.clear(this.id, this.sheet, this.range, what));
   }
 
@@ -1122,40 +1195,60 @@ export class WorkbookController {
     await this.run(api.redo(this.id));
   }
 
+  /** F4 / Ctrl+Y: repeat the last formatting or insert/delete action on the selection. */
+  private lastAction: (() => unknown) | null = null;
+
+  repeatLast() {
+    this.lastAction?.();
+  }
+
+  /** Ctrl+Y redoes when there is something to redo, otherwise repeats (Excel). */
+  redoOrRepeat() {
+    if (this.info.canRedo) return this.redo();
+    this.repeatLast();
+  }
+
   // Rows / columns
   async insertRows() {
+    this.lastAction = () => this.insertRows();
     const r = this.range;
     await this.run(api.insertRows(this.id, this.sheet, r.r1, r.r2 - r.r1 + 1));
   }
 
   async deleteRows() {
+    this.lastAction = () => this.deleteRows();
     const r = this.range;
     await this.run(api.deleteRows(this.id, this.sheet, r.r1, Math.min(r.r2, LAST_ROW) - r.r1 + 1));
   }
 
   async insertCols() {
+    this.lastAction = () => this.insertCols();
     const r = this.range;
     await this.run(api.insertCols(this.id, this.sheet, r.c1, r.c2 - r.c1 + 1));
   }
 
   async deleteCols() {
+    this.lastAction = () => this.deleteCols();
     const r = this.range;
     await this.run(api.deleteCols(this.id, this.sheet, r.c1, r.c2 - r.c1 + 1));
   }
 
   async insertCells(shift: "down" | "right" | "row" | "col") {
+    this.lastAction = () => this.insertCells(shift);
     if (shift === "row") return this.insertRows();
     if (shift === "col") return this.insertCols();
     await this.run(api.insertCells(this.id, this.sheet, this.range, shift));
   }
 
   async deleteCells(shift: "up" | "left" | "row" | "col") {
+    this.lastAction = () => this.deleteCells(shift);
     if (shift === "row") return this.deleteRows();
     if (shift === "col") return this.deleteCols();
     await this.run(api.deleteCells(this.id, this.sheet, this.range, shift));
   }
 
   setHidden(axis: "rows" | "cols", hidden: boolean) {
+    this.lastAction = () => this.setHidden(axis, hidden);
     const r = this.range;
     if (axis === "rows") return this.run(api.setHidden(this.id, this.sheet, "rows", r.r1, r.r2, hidden));
     return this.run(api.setHidden(this.id, this.sheet, "cols", r.c1, r.c2, hidden));
@@ -1351,6 +1444,24 @@ export class WorkbookController {
     }
   }
 
+  /** Paste Special (Ctrl+Alt+V) and Paste → Transpose / Paste Link. */
+  async pasteSpecial(options: PasteSpecialOptions) {
+    let clipboardText: string | null = null;
+    try {
+      clipboardText = await navigator.clipboard.readText();
+    } catch {
+      clipboardText = null;
+    }
+    try {
+      const res = await api.pasteSpecial(this.id, this.sheet, this.range, options, clipboardText);
+      if (this.clip?.cut) this.clip = null;
+      await this.setInfo(res.info);
+      this.selectRange(res.rect, undefined, true);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
   clearClip() {
     if (this.clip) {
       this.clip = null;
@@ -1377,32 +1488,124 @@ export class WorkbookController {
   }
 
   // Fill
-  async fill(target: Rect) {
+  /** Fill-handle drag (Ctrl+drag = "toggle"). `target` includes the selection. */
+  async fill(target: Rect, mode: FillMode = "auto") {
     const source = this.range;
     if (sameRect(source, target)) return;
-    const ok = await this.run(api.fill(this.id, this.sheet, source, target));
-    if (ok) this.selectRange(target, this.sel.active, false);
+    const sheet = this.sheet;
+    try {
+      const [report, info] = await api.fill(this.id, sheet, source, target, mode);
+      await this.setInfo(info);
+      this.selectRange(target, this.sel.active, false);
+      const grew = target.r1 < source.r1 || target.r2 > source.r2 || target.c1 < source.c1 || target.c2 > source.c2;
+      if (grew) {
+        this.fillOptions = { sheet, source, target, report };
+        this.emit();
+      }
+    } catch (e) {
+      this.fail(e);
+    }
   }
 
+  /** AutoFill Options: redo the last fill another way (one undo step). */
+  async changeFill(mode: FillMode) {
+    const o = this.fillOptions;
+    if (!o || o.sheet !== this.sheet || o.report.mode === mode) return;
+    try {
+      await api.undo(this.id);
+      const [report, info] = await api.fill(this.id, o.sheet, o.source, o.target, mode);
+      await this.setInfo(info);
+      this.selectRange(o.target, { r: o.source.r1, c: o.source.c1 }, false);
+      this.fillOptions = { ...o, report };
+      this.emit();
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** AutoFill Options → Flash Fill: undo the fill and fill the column by example. */
+  async fillToFlashFill() {
+    const o = this.fillOptions;
+    if (!o) return;
+    try {
+      await this.setInfo(await api.undo(this.id));
+      this.selectRange(o.target, { r: o.source.r1, c: o.source.c1 }, false);
+      await this.flashFill();
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Double-click on the fill handle: fill down as far as the data next to it. */
+  async fillToExtent() {
+    const source = this.range;
+    if (isFullCols(source) || isFullRows(source)) return;
+    try {
+      const last = await api.fillExtent(this.id, this.sheet, source);
+      if (last && last > source.r2) await this.fill({ ...source, r2: last });
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Ctrl+D / Ctrl+R and Home → Fill → Down/Right/Up/Left copy the first row or column. */
   async fillDirection(dir: "down" | "right" | "up" | "left") {
-    const r = this.range;
+    const r = this.usedClampFill(this.range);
+    let source: Rect;
+    let target = r;
     if (dir === "down") {
       if (r.r1 === r.r2) {
         if (r.r1 === 1) return;
-        // Ctrl+D with one row copies from the row above
-        return this.run(api.fill(this.id, this.sheet, rect(r.r1 - 1, r.c1, r.r1 - 1, r.c2), rect(r.r1 - 1, r.c1, r.r2, r.c2)));
-      }
-      return this.run(api.fill(this.id, this.sheet, rect(r.r1, r.c1, r.r1, r.c2), r));
-    }
-    if (dir === "right") {
+        // One row selected: copy from the row above
+        source = rect(r.r1 - 1, r.c1, r.r1 - 1, r.c2);
+        target = rect(r.r1 - 1, r.c1, r.r2, r.c2);
+      } else source = rect(r.r1, r.c1, r.r1, r.c2);
+    } else if (dir === "right") {
       if (r.c1 === r.c2) {
         if (r.c1 === 1) return;
-        return this.run(api.fill(this.id, this.sheet, rect(r.r1, r.c1 - 1, r.r2, r.c1 - 1), rect(r.r1, r.c1 - 1, r.r2, r.c2)));
-      }
-      return this.run(api.fill(this.id, this.sheet, rect(r.r1, r.c1, r.r2, r.c1), r));
+        source = rect(r.r1, r.c1 - 1, r.r2, r.c1 - 1);
+        target = rect(r.r1, r.c1 - 1, r.r2, r.c2);
+      } else source = rect(r.r1, r.c1, r.r2, r.c1);
+    } else if (dir === "up") source = rect(r.r2, r.c1, r.r2, r.c2);
+    else source = rect(r.r1, r.c2, r.r2, r.c2);
+    if (sameRect(source, target)) return;
+    try {
+      const [, info] = await api.fill(this.id, this.sheet, source, target, "copy");
+      await this.setInfo(info);
+    } catch (e) {
+      this.fail(e);
     }
-    if (dir === "up") return this.run(api.fill(this.id, this.sheet, rect(r.r2, r.c1, r.r2, r.c2), r));
-    return this.run(api.fill(this.id, this.sheet, rect(r.r1, r.c2, r.r2, r.c2), r));
+  }
+
+  /** Full-column/row selections fill only as far as the used area. */
+  private usedClampFill(r: Rect): Rect {
+    return isFullCols(r) || isFullRows(r) ? this.usedClamp(r) : r;
+  }
+
+  /** Home → Fill → Series. */
+  async fillSeries(spec: SeriesSpec) {
+    try {
+      const [filled, info] = await api.fillSeries(this.id, this.sheet, this.usedClampFill(this.range), spec);
+      await this.setInfo(info);
+      this.selectRange(filled, this.sel.active, false);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Flash Fill (Ctrl+E): fill the active column from the examples typed in it. */
+  async flashFill() {
+    if (this.edit) await this.commitEdit("none");
+    const { r, c } = this.sel.active;
+    try {
+      const [res, info] = await api.flashFill(this.id, this.sheet, r, c);
+      await this.setInfo(info);
+      this.selectRange(res.rect, { r: res.rect.r1, c: res.rect.c1 }, false);
+      this.statusNote = `Flash Fill Changed Cells: ${res.count}`;
+      this.emit();
+    } catch (e) {
+      this.fail(e);
+    }
   }
 
   // Data
@@ -1538,6 +1741,199 @@ export class WorkbookController {
       this.fail(e);
       return false;
     }
+  }
+
+  // ------------------------------------------------------------------
+  // Keyboard helpers (Excel shortcuts)
+  // ------------------------------------------------------------------
+
+  /** F8: arrow keys extend the selection until F8 or Esc. */
+  extendMode = false;
+  /** End: the next arrow key jumps to the edge of the data. */
+  endMode = false;
+
+  setExtendMode(on: boolean) {
+    if (this.extendMode === on) return;
+    this.extendMode = on;
+    this.emit();
+  }
+
+  setEndMode(on: boolean) {
+    if (this.endMode === on) return;
+    this.endMode = on;
+    this.emit();
+  }
+
+  /** Ctrl+A: the data around the active cell first, then the whole sheet. */
+  async selectRegionOrAll() {
+    const { r, c } = this.sel.active;
+    const range = this.sel.range;
+    try {
+      const region = await api.currentRegion(this.id, this.sheet, r, c);
+      const single = region.r1 === region.r2 && region.c1 === region.c2 && !this.cache.get(r, c)?.text;
+      const inside = range.r1 >= region.r1 && range.r2 <= region.r2 && range.c1 >= region.c1 && range.c2 <= region.c2;
+      if (single || sameRect(region, range) || !inside) this.selectAll();
+      else this.selectRange(region, { r, c }, false);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Ctrl+Shift+* : select the current region. */
+  async selectCurrentRegion() {
+    const { r, c } = this.sel.active;
+    try {
+      this.selectRange(await api.currentRegion(this.id, this.sheet, r, c), { r, c }, false);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Shift+Backspace: keep only the active cell selected. */
+  collapseSelection() {
+    const { r, c } = this.sel.active;
+    this.select(r, c);
+  }
+
+  /** Ctrl+Backspace: scroll the active cell into view. */
+  scrollToActive() {
+    this.ensureVisible(this.sel.active.r, this.sel.active.c);
+  }
+
+  /** Ctrl+. : move the active cell clockwise to the next corner of the selection. */
+  nextCorner() {
+    const r = this.sel.range;
+    if (r.r1 === r.r2 && r.c1 === r.c2) return;
+    const { r: ar, c: ac } = this.sel.active;
+    const corners: Pos[] = [
+      { r: r.r1, c: r.c1 },
+      { r: r.r1, c: r.c2 },
+      { r: r.r2, c: r.c2 },
+      { r: r.r2, c: r.c1 },
+    ];
+    const i = corners.findIndex((p) => p.r === ar && p.c === ac);
+    const next = corners[(i + 1) % 4];
+    this.setSelection({ ...this.sel, active: next });
+    this.ensureVisible(next.r, next.c);
+  }
+
+  /** Ctrl+' copies the formula, Ctrl+Shift+" the value, of the cell above into the editor. */
+  async copyFromAbove(value: boolean) {
+    const { r, c } = this.sel.active;
+    if (r <= 1 || this.edit) return;
+    try {
+      const above = await api.cellInfo(this.id, this.sheet, r - 1, c);
+      this.startEdit("edit", value ? above.formatted : above.content);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Ctrl+[ : go to the cells the active formula refers to. */
+  goToPrecedents() {
+    const content = this.activeInfo?.content ?? "";
+    if (!content.startsWith("=")) return;
+    const refs = tokenize(content).refs;
+    if (!refs.length) return;
+    const ref = refs[0];
+    const same = refs.filter((x) => (x.sheet ?? "").toLowerCase() === (ref.sheet ?? "").toLowerCase());
+    const box = same.reduce(
+      (acc, x) => rect(Math.min(acc.r1, x.rect.r1), Math.min(acc.c1, x.rect.c1), Math.max(acc.r2, x.rect.r2), Math.max(acc.c2, x.rect.c2)),
+      ref.rect,
+    );
+    const text = (ref.sheet ? `${quoteSheet(ref.sheet)}!` : "") + rectName(box);
+    this.goTo(text);
+  }
+
+  /** Alt+Down: the entries already typed in this column, for the pick list. */
+  columnEntries(limit = 500): string[] {
+    const { r, c } = this.sel.active;
+    const seen = new Map<string, string>();
+    const take = (row: number) => {
+      const e = this.cache.get(row, c);
+      if (!e?.text) return false;
+      if ((e.kind & 7) === Kind.TEXT && !(e.kind & Kind.FORMULA)) {
+        const key = e.text.toLowerCase();
+        if (!seen.has(key)) seen.set(key, e.text);
+      }
+      return true;
+    };
+    for (let row = r - 1; row >= 1 && r - row <= limit && take(row); row--);
+    for (let row = r + 1; row <= LAST_ROW && row - r <= limit && take(row); row++);
+    return [...seen.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  }
+
+  /** Pick list shown under the active cell (Alt+Down / "Pick From Drop-down List"). */
+  pickList: string[] | null = null;
+
+  showPickList() {
+    const items = this.columnEntries();
+    this.pickList = items.length ? items : null;
+    if (!items.length) this.ui?.error("There are no text entries above or below this cell to pick from.");
+    this.emit();
+  }
+
+  closePickList() {
+    if (!this.pickList) return;
+    this.pickList = null;
+    this.emit();
+    this.ui?.focusGrid();
+  }
+
+  async pick(text: string) {
+    this.pickList = null;
+    const { r, c } = this.sel.active;
+    await this.run(api.setCell(this.id, this.sheet, r, c, text));
+    this.ui?.focusGrid();
+  }
+
+  /** The last Find query, for Shift+F4 (find next) and Ctrl+Shift+F4 (previous). */
+  lastFind: { query: string; options: FindOptions } | null = null;
+
+  async findNext(dir: 1 | -1) {
+    const f = this.lastFind;
+    if (!f?.query) {
+      this.ui?.dialog("find", { tab: "find" });
+      return;
+    }
+    try {
+      const list = await api.findAll(this.id, this.sheet, f.query, f.options);
+      if (!list.length) {
+        this.ui?.error(`We couldn't find "${f.query}".`);
+        return;
+      }
+      const { r, c } = this.sel.active;
+      const after = (x: { sheet: number; row: number; col: number }) =>
+        x.sheet > this.sheet || (x.sheet === this.sheet && (x.row > r || (x.row === r && x.col > c)));
+      const before = (x: { sheet: number; row: number; col: number }) =>
+        x.sheet < this.sheet || (x.sheet === this.sheet && (x.row < r || (x.row === r && x.col < c)));
+      const hit = dir > 0 ? list.find(after) ?? list[0] : [...list].reverse().find(before) ?? list[list.length - 1];
+      if (hit.sheet !== this.sheet) await this.switchSheet(hit.sheet);
+      this.select(hit.row, hit.col);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Ctrl+Tab / Ctrl+F6: switch to the next open workbook window. */
+  async nextWindow(dir: 1 | -1) {
+    try {
+      const books = await api.bookWindows();
+      if (books.length < 2) return;
+      const i = books.findIndex((b) => b.book === this.id);
+      const next = books[(i + dir + books.length) % books.length];
+      await api.focusBook(next.book);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  /** Ctrl+Alt+= / Ctrl+Alt+- : zoom in and out in Excel's steps. */
+  zoomStep(dir: 1 | -1) {
+    const steps = [0.1, 0.25, 0.5, 0.75, 0.85, 1, 1.15, 1.25, 1.5, 1.75, 2, 2.5, 3, 4];
+    const z = this.zoom;
+    const next = dir > 0 ? steps.find((s) => s > z + 0.001) : [...steps].reverse().find((s) => s < z - 0.001);
+    if (next) this.setZoom(next);
   }
 
   // ------------------------------------------------------------------

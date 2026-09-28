@@ -25,25 +25,19 @@ Open the `.dmg` and drag **Sheets** to **Applications**. The app is not notarize
 
 ## What's new in {{VERSION}}
 
-**Reliability — never lose work**
-- **AutoRecover** snapshots every changed workbook (every 30 s by default, even never-saved ones). After a crash, the start screen offers them back.
-- **Recover Unsaved Workbooks**: closing with "Don't Save" keeps the last state for 7 days (File → Open).
-- **Version history**: every save keeps the previous version of the file (File → Info).
-- Saves are written to a temporary file, flushed to disk, then swapped in — a crash or power cut can't leave a half-written file.
+**AutoFill that works like Excel**
+- Dragging the fill handle shows the **AutoFill Options** button at the corner of the filled cells: switch between **Copy Cells**, **Fill Series**, **Fill Formatting Only** and **Fill Without Formatting** — and for dates **Fill Days / Weekdays / Months / Years**.
+- One number is copied, as in Excel; hold **Ctrl** while dragging (or pick Fill Series) to count 1, 2, 3…. Two or more numbers continue their trend. Dates, `Item 1`, `ID-007`, `1st`, `Q1`, month and day names continue on their own, and filling up or left counts down.
+- **Double-click the fill handle** to fill down to the end of the neighbouring data. Home → Fill → **Series…** for linear, growth and date series with a step, stop value or trend.
+- **Flash Fill** (Ctrl+E, Data tab): type one example next to your data (`John Smith` → `Smith, J.`) and Sheets fills the rest of the column.
 
-**Data integrity — no silent changes to your data**
-- Leading zeros (`00501`) and numbers longer than 15 digits (card numbers, IDs) are kept exactly, when typing, pasting and importing CSV.
-- CSV files in UTF-8, UTF-16 or Windows-1252 open with correct accents; CSV is saved as UTF-8 with BOM so Excel reads it correctly too.
-- CSV export never rounds numbers to their display format.
-- Pasting text with rows of different lengths no longer drops rows.
+**Paste Special** (Ctrl+Alt+V): formulas, values, formats, number formats, no borders, column widths, **Add / Subtract / Multiply / Divide**, **Skip blanks**, **Transpose** and **Paste Link**. Ctrl+Shift+V pastes values only.
 
-**New features**
-- AutoFilter (Ctrl+Shift+L) with value checklist, search and sort.
-- Charts: column, bar, line, area, pie, doughnut, scatter (Alt+F1). Live, movable, resizable, saved in the `.xlsx`.
-- Check Workbook: finds formula errors, inconsistent formulas, totals that skip numbers, numbers stored as text and hidden data.
-- PivotTable summaries built from live SUMIFS/COUNTIFS formulas.
-- Text to Columns, cell notes (Shift+F2), links (Ctrl+K, Ctrl+click to open).
-- Print / Save as PDF (Ctrl+P), Switch Windows.
-- macOS support with native window buttons and ⌘ shortcuts.
+**Keyboard**
+- **KeyTips**: press Alt (or F10) and type the letters shown on the ribbon — Alt, H, 1 for Bold, Alt, A, F, F for Flash Fill…
+- The rest of Excel's shortcuts: Ctrl+A (data region, then sheet), End mode, F8 Extend Selection, F4 repeat last action, Ctrl+' / Ctrl+Shift+" copy from above, Ctrl+[ go to precedents, Ctrl+. corners, Shift+F4 find next, F3 / Ctrl+F3 / Ctrl+Shift+F3 names, Ctrl+Shift+~ General format, Ctrl+Tab windows, Ctrl+Alt+= / - zoom, and more. **F1** lists them all.
+- **AutoComplete** finishes text you have already typed in the column; **Alt+↓** picks from the column's entries.
+
+**Also in Sheets** (since 0.2): AutoRecover and crash recovery, Recover Unsaved Workbooks, version history, data-integrity guards (leading zeros, long numbers, gene names), encoding-aware CSV, AutoFilter, charts, Check Workbook, PivotTable summaries, Text to Columns, notes, links, Print / Save as PDF, Windows and macOS.
 
 See the [README](https://github.com/{{REPO}}/blob/{{TAG}}/README.md), the [roadmap](https://github.com/{{REPO}}/blob/{{TAG}}/docs/ROADMAP.md) and [why Sheets is safer than Excel](https://github.com/{{REPO}}/blob/{{TAG}}/docs/EXCEL_PAIN_POINTS.md) for details.

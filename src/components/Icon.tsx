@@ -314,6 +314,25 @@ const small: Record<string, Draw> = {
       <path d="M8 5v6M5.5 8.5L8 11l2.5-2.5" stroke={B} strokeWidth="1.3" fill="none" />
     </>
   ),
+  /** AutoFill Options tag: cells with a fill arrow. */
+  autoFillOptions: () => (
+    <>
+      <path d="M1.5 2.5h8v8h-8zM1.5 6.5h8M5.5 2.5v8" {...s} />
+      <path d="M11.5 6v7.5M9.5 11.5l2 2 2-2" stroke={G2} strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  flashFill: () => (
+    <>
+      <path d="M2.5 3.5h5M2.5 7h5M2.5 10.5h3" {...s} />
+      <path d="M11.5 1.5L8.5 8h3l-1.5 6.5 4.5-8h-3l1.5-5z" fill={Y} stroke={O} strokeWidth="0.8" strokeLinejoin="round" />
+    </>
+  ),
+  series: () => (
+    <>
+      <path d="M2.5 2.5h5v11h-5zM2.5 6.2h5M2.5 9.8h5" {...s} />
+      <path d="M10 4.5h1.5M10 8h3M10 11.5h4.5" stroke={B} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+    </>
+  ),
   clear: () => (
     <>
       <path d="M9 2.5l4.5 4.5-6 6H4.5L2.5 11z" {...s} />

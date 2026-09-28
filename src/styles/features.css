@@ -63,6 +63,28 @@
   background: #f0f0f0;
 }
 
+/* ---------- AutoFill Options ---------- */
+.fill-options-btn {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 20px;
+  padding: 0 2px;
+  border: 1px solid #b9b9b9;
+  border-radius: 2px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.fill-options-btn:hover,
+.fill-options-btn.open {
+  border-color: #8a8a8a;
+  background: #f3f3f3;
+}
+
 /* ---------- AutoFilter menu ---------- */
 .filter-menu {
   width: 260px;
@@ -434,4 +456,101 @@ input.tiny {
 .print-note {
   font-size: 9pt;
   color: #666;
+}
+
+/* ---------- Series dialog ---------- */
+.series-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.series-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 6px 0;
+}
+.series-values .fc-row .lbl {
+  min-width: 0;
+  white-space: nowrap;
+}
+.series-values .fc-row input {
+  width: 0;
+  min-width: 0;
+}
+.fc-row.disabled {
+  opacity: 0.5;
+}
+
+/* ---------- Paste Special ---------- */
+.ps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 12px;
+}
+fieldset.disabled {
+  opacity: 0.55;
+}
+
+/* ---------- KeyTips (Alt / F10) ---------- */
+.keytips {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+.keytip {
+  position: absolute;
+  transform: translate(-50%, 0);
+  min-width: 14px;
+  padding: 1px 4px;
+  border: 1px solid #6b6b6b;
+  border-radius: 2px;
+  background: #3b3b3b;
+  color: #fff;
+  font: 600 11px/14px "Segoe UI", system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.spacer {
+  flex: 1;
+}
+
+/* ---------- Keyboard shortcuts, Paste Name ---------- */
+.shortcut-search {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.shortcut-groups {
+  max-height: 460px;
+  overflow-y: auto;
+}
+.shortcut-groups h4 {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  color: var(--accent, #107c41);
+}
+.shortcut-groups .shortcut-list {
+  max-height: none;
+  overflow: visible;
+}
+.shortcut-groups .shortcut-list div {
+  grid-template-columns: 230px 1fr;
+}
+.name-pick-list {
+  height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  background: var(--surface, #fff);
+}
+.name-pick {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 8px;
+  cursor: default;
+}
+.name-pick.active {
+  background: var(--selected, #cce8d6);
 }

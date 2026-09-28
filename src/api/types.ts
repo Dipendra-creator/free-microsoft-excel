@@ -143,6 +143,59 @@ export interface FilterValue {
   checked: boolean;
 }
 
+/** How a fill writes the new cells (AutoFill Options). */
+export type FillMode =
+  | "auto"
+  | "toggle"
+  | "copy"
+  | "series"
+  | "formats"
+  | "values"
+  | "days"
+  | "weekdays"
+  | "months"
+  | "years";
+
+export interface FillReport {
+  /** The option the result corresponds to. */
+  mode: FillMode;
+  hasDates: boolean;
+  canSeries: boolean;
+}
+
+/** Home → Fill → Series. */
+export interface SeriesSpec {
+  inRows: boolean;
+  kind: "linear" | "growth" | "date" | "autofill";
+  unit: "day" | "weekday" | "month" | "year";
+  step: number;
+  stop: number | null;
+  trend: boolean;
+}
+
+/** Paste Special options. */
+export interface PasteSpecialOptions {
+  what:
+    | "all"
+    | "formulas"
+    | "values"
+    | "formats"
+    | "allExceptBorders"
+    | "columnWidths"
+    | "formulasAndNumberFormats"
+    | "valuesAndNumberFormats"
+    | "valuesAndSourceFormatting"
+    | "link";
+  operation: "none" | "add" | "subtract" | "multiply" | "divide";
+  skipBlanks: boolean;
+  transpose: boolean;
+}
+
+export interface FlashFillResult {
+  rect: Rect;
+  count: number;
+}
+
 export interface SplitOptions {
   delimiters: string;
   consecutive: boolean;

@@ -6,6 +6,8 @@ import { fontCss, type HitResult, type WorkbookController } from "../controller"
 import { useCtl } from "../hooks";
 import { handleEditorKey, handleGridKey } from "../keys";
 import { ChartLayer } from "../charts/ChartLayer";
+import { Menu } from "../../components/Menu";
+import { FillOptionsButton } from "../FillOptions";
 import { FilterMenu } from "../FilterMenu";
 import { NotesLayer } from "../NotesLayer";
 import { filterButtonBox, GridRenderer, readTheme } from "./renderer";
@@ -105,7 +107,7 @@ export function Grid({
     if (dx || dy) ctl.scrollBy(dx, dy);
   };
 
-  const drag = (onMove: (x: number, y: number) => void, onUp: (x: number, y: number) => void) => {
+  const drag = (onMove: (x: number, y: number) => void, onUp: (x: number, y: number, ev: MouseEvent) => void) => {
     let last = { x: 0, y: 0 };
     let timer: number | undefined;
     const move = (ev: MouseEvent) => {
@@ -126,7 +128,7 @@ export function Grid({
       window.removeEventListener("mouseup", up);
       ctl.dragging = false;
       const p = local(ev);
-      onUp(p.x, p.y);
+      onUp(p.x, p.y, ev);
       ctl.emit();
     };
     window.addEventListener("mousemove", move);
@@ -302,11 +304,12 @@ export function Grid({
           ctl.fillPreview = target;
           ctl.paint();
         },
-        () => {
+        (_x, _y, ev) => {
           const target = ctl.fillPreview;
           ctl.fillPreview = null;
           ctl.paint();
-          if (target) ctl.fill(target);
+          // Ctrl (Option on the Mac) while releasing switches copy and series, like Excel
+          if (target) ctl.fill(target, ev.ctrlKey || ev.altKey ? "toggle" : "auto");
         },
       );
       return;
@@ -357,6 +360,10 @@ export function Grid({
       ctl.autoFitRows(hit.index!, hit.index!);
       return;
     }
+    if (hit.fillHandle) {
+      ctl.fillToExtent();
+      return;
+    }
     if (hit.kind === "cell" && !ctl.edit) {
       ctl.startEdit("edit");
     }
@@ -392,6 +399,8 @@ export function Grid({
         <canvas ref={canvasRef} className="grid-canvas" />
         <ChartLayer ctl={ctl} />
         <NotesLayer ctl={ctl} hover={hoverNote} />
+        <FillOptionsButton ctl={ctl} />
+        <PickList ctl={ctl} canvasRef={canvasRef} />
         <CellEditor ctl={ctl} editorRef={editorRef} />
         {filterMenu && (
           <FilterMenu
@@ -407,6 +416,23 @@ export function Grid({
       </div>
       <Scrollbar ctl={ctl} orientation="vertical" />
     </div>
+  );
+}
+
+/** Alt+Down: the text entries of the column, to pick one for the active cell. */
+function PickList({ ctl, canvasRef }: { ctl: WorkbookController; canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
+  const items = useCtl(ctl, (c) => c.pickList);
+  const canvas = canvasRef.current;
+  if (!items || !canvas) return null;
+  const { r, c } = ctl.sel.active;
+  const cr = canvas.getBoundingClientRect();
+  const anchor = new DOMRect(cr.left + ctl.colX(c), cr.top + ctl.rowY(r), Math.max(ctl.cols.size(c), 120), ctl.rows.size(r));
+  return (
+    <Menu
+      anchor={anchor}
+      items={items.map((text) => ({ label: text, onClick: () => ctl.pick(text) }))}
+      onClose={() => ctl.closePickList()}
+    />
   );
 }
 
@@ -554,11 +580,12 @@ function CellEditor({ ctl, editorRef }: { ctl: WorkbookController; editorRef: Re
           const el = e.currentTarget;
           if (!ctl.edit) {
             if (composing.current) return;
-            ctl.startEdit("enter", el.value);
+            ctl.startTyping(el.value);
             return;
           }
           if (ctl.edit.source !== "cell") return;
-          ctl.updateEdit(el.value, el.selectionStart, el.selectionEnd);
+          const inserted = (e.nativeEvent as InputEvent).inputType?.startsWith("insert") ?? false;
+          ctl.updateEdit(el.value, el.selectionStart, el.selectionEnd, false, inserted);
         }}
         onSelect={(e) => {
           const el = e.currentTarget;
