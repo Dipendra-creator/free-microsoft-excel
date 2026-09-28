@@ -607,6 +607,9 @@ fn pivot_without_column_field() {
     let index = s.create_pivot(0, &spec).unwrap();
     let t = |s: &Session, r: i32, c: i32| s.cell_info(index, r, c).unwrap().formatted;
     assert_eq!(t(&s, 3, 2), "Grand Total");
+    // Plain labels are stored without a quote prefix
+    assert_eq!(s.cell_info(index, 3, 1).unwrap().content, "Fruit");
+    assert_eq!(s.cell_info(index, 4, 1).unwrap().content, "Apple");
     assert_eq!(t(&s, 5, 2), "21");
     assert_eq!(t(&s, 7, 2), "43");
     for c in 1..=2 {

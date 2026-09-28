@@ -124,6 +124,21 @@ pub fn split_line(text: &str, opts: &SplitOptions) -> Vec<String> {
     out
 }
 
+/// Input that stores `text` as text: plain words are written as-is, anything
+/// the engine might read as a number, date, boolean or formula gets a quote.
+fn text_input(text: &str) -> String {
+    let t = text.trim();
+    let risky = t.starts_with(['=', '+', '-', '@', '\''])
+        || t.chars().any(|c| c.is_ascii_digit())
+        || t.eq_ignore_ascii_case("true")
+        || t.eq_ignore_ascii_case("false");
+    if risky {
+        format!("'{text}")
+    } else {
+        text.to_string()
+    }
+}
+
 fn quote_sheet(name: &str) -> String {
     if name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') && !name.is_empty() && !name.chars().next().unwrap().is_ascii_digit() {
         name.to_string()
@@ -648,18 +663,18 @@ impl Session {
         let mut cells: Vec<(i32, i32, String)> = Vec::new();
         let top = 3;
         cells.push((1, 1, title.clone()));
-        cells.push((top, 1, format!("'{}", label(&rows_header))));
+        cells.push((top, 1, text_input(&label(&rows_header))));
         let first_data_row = top + 1;
         let last_col = 2 + col_items.len() as i32;
         if let Some(h) = &cols_header {
-            cells.push((top - 1, 2, format!("'{h}")));
+            cells.push((top - 1, 2, text_input(h)));
         }
         // Numeric labels (numbers, dates) are written as numbers so that the
         // "="&label criteria compare values, and keep the source format.
         let mut formats: Vec<(i32, i32, String)> = Vec::new();
         let label_input = |text: &str, number: Option<f64>| match number {
             Some(n) if !text.is_empty() => super::format_number_input(n),
-            _ => format!("'{}", label(text)),
+            _ => text_input(&label(text)),
         };
         let fmt_of = |c: i32| {
             model
