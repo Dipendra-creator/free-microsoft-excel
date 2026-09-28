@@ -59,7 +59,9 @@ jobs:
             const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
             const existing = releases.find((r) => r.tag_name === TAG);
             if (existing) {
-              await github.rest.repos.updateRelease({ ...context.repo, release_id: existing.id, body });
+              // A retried draft follows the commit being built
+              const update = existing.draft ? { target_commitish: context.sha } : {};
+              await github.rest.repos.updateRelease({ ...context.repo, release_id: existing.id, body, ...update });
               return existing.id;
             }
             const { data } = await github.rest.repos.createRelease({
