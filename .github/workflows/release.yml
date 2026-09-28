@@ -11,10 +11,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
-    branches:
-      - main
-      # One-off: the first release (0.2.0) is built from this branch.
-      - claude/adoring-cori-us8u2f
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
