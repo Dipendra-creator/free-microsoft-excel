@@ -150,7 +150,7 @@ PivotTable summaries, Check Workbook, printing / PDF, macOS support.
 ### 0.3 — "Data tools"
 Data validation with dropdown lists, advanced filter conditions, Go To Special,
 fixed-width Text to Columns, notes exported as real Excel comments, sheet
-protection, Linux packages, warnings when an import would exceed sheet limits.
+protection, Linux packages, warnings when a paste would run past the sheet edge.
 
 ### 0.4 — "Presentation"
 Charts saved as native Excel charts, more chart types, pictures and shapes,
