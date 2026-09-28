@@ -1,0 +1,84 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Sheets",
+  "version": "0.4.0",
+  "identifier": "com.internal.sheets",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Sheets",
+        "width": 1400,
+        "height": 880,
+        "minWidth": 760,
+        "minHeight": 480,
+        "center": true,
+        "decorations": false,
+        "backgroundColor": "#141414"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "shortDescription": "Lightweight, reliable spreadsheet",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "xlsx",
+          "xlsm"
+        ],
+        "name": "Excel Workbook",
+        "description": "Excel Workbook",
+        "role": "Editor",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      },
+      {
+        "ext": [
+          "csv"
+        ],
+        "name": "CSV File",
+        "description": "Comma separated values",
+        "role": "Editor",
+        "mimeType": "text/csv"
+      }
+    ],
+    "longDescription": "Sheets is a fast, lightweight spreadsheet app that opens and saves Excel .xlsx files, with AutoRecover, version history and data-integrity safeguards.",
+    "copyright": "Copyright © 2026 Dipendra Bhardwaj",
+    "category": "Productivity",
+    "publisher": "Dipendra Bhardwaj",
+    "homepage": "https://github.com/Dipendra-creator/sheets-desktop",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJBODM0MjRBMUMwMEI3M0EKUldRNnR3QWNTa0tES3RHU1ZpSzluOHJmbVdXVWJtZUEzcWRJNDB3ZjAveTlkSDNZSWk2dVZLMFgK",
+      "endpoints": [
+        "https://github.com/Dipendra-creator/sheets-desktop/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

@@ -1,0 +1,298 @@
+name: Release
+
+# Builds Sheets for Windows and macOS and publishes a GitHub Release.
+# Triggers:
+#  * a push to main whose version (src-tauri/tauri.conf.json) has no published
+#    release yet — bump the version on main to ship it;
+#  * a pushed tag that matches the version (e.g. v0.2.0);
+#  * a manual run from the Actions tab.
+# GitHub creates the vX.Y.Z tag when the release is published.
+#
+# In-app updates: when the TAURI_SIGNING_PRIVATE_KEY secret (and, if the key
+# has one, TAURI_SIGNING_PRIVATE_KEY_PASSWORD) is set, the installers are
+# signed and latest.json is published; installed copies of Sheets then offer
+# the update in their title bar.
+
+on:
+  push:
+    tags: ["v*"]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    name: Create draft release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.create.outputs.result }}
+      skip: ${{ steps.create.outputs.skip }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v$VERSION"; fi
+          if [[ "$TAG" != "v$VERSION" ]]; then
+            echo "::error::Tag $TAG does not match the app version v$VERSION in src-tauri/tauri.conf.json"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create or reuse the release
+        id: create
+        uses: actions/github-script@v9
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { VERSION, TAG } = process.env;
+            const repo = `${context.repo.owner}/${context.repo.repo}`;
+            const body = fs
+              .readFileSync('.github/release-notes.md', 'utf8')
+              .replaceAll('{{VERSION}}', VERSION)
+              .replaceAll('{{TAG}}', TAG)
+              .replaceAll('{{REPO}}', repo);
+            const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
+            let existing = releases.find((r) => r.tag_name === TAG);
+            // A release published while its commit's workflow files were not on
+            // the default branch is left "untagged-…": the Actions token may not
+            // create such a tag (it lacks the `workflows` permission). Once the
+            // workflows are on main, restore the tag — on the built commit if
+            // allowed, otherwise on the commit being run.
+            const orphan = releases.find((r) => r.name === `Sheets ${TAG}` && r.tag_name.startsWith('untagged-'));
+            if (!existing && orphan) {
+              const retag = (target_commitish) =>
+                github.rest.repos.updateRelease({ ...context.repo, release_id: orphan.id, tag_name: TAG, target_commitish });
+              let result;
+              try {
+                result = await retag(orphan.target_commitish);
+              } catch (e) {
+                core.warning(`Could not tag ${orphan.target_commitish} (${e.message}); tagging ${context.sha} instead.`);
+                result = await retag(context.sha);
+              }
+              core.notice(`Restored tag ${TAG} on release ${orphan.id}`);
+              existing = result.data;
+            }
+            core.setOutput('skip', 'false');
+            if (existing && !existing.draft && context.eventName === 'push' && context.ref.startsWith('refs/heads/')) {
+              core.notice(`${TAG} is already released; bump the version in src-tauri/tauri.conf.json to publish a new release.`);
+              core.setOutput('skip', 'true');
+              return existing.id;
+            }
+            if (existing) {
+              // A retried draft follows the commit being built
+              const update = existing.draft ? { target_commitish: context.sha } : {};
+              await github.rest.repos.updateRelease({ ...context.repo, release_id: existing.id, tag_name: TAG, body, ...update });
+              return existing.id;
+            }
+            const { data } = await github.rest.repos.createRelease({
+              ...context.repo,
+              tag_name: TAG,
+              target_commitish: context.sha,
+              name: `Sheets ${TAG}`,
+              body,
+              draft: true,
+              prerelease: false,
+            });
+            return data.id;
+
+  build:
+    name: Build (${{ matrix.label }})
+    needs: create-release
+    if: needs.create-release.outputs.skip != 'true'
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Windows x64
+            platform: windows-latest
+            args: ""
+          - label: macOS Apple Silicon
+            platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - label: macOS Intel
+            platform: macos-latest
+            args: --target x86_64-apple-darwin
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.args }}
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      # In-app updates need the files signed with the project's update key
+      # (repository secret TAURI_SIGNING_PRIVATE_KEY). Without it the release
+      # is still built; the app then only announces it and links here.
+      - name: Enable signed in-app update files
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            node -e "const f='src-tauri/tauri.conf.json';const fs=require('fs');const c=JSON.parse(fs.readFileSync(f,'utf8'));c.bundle.createUpdaterArtifacts=true;fs.writeFileSync(f,JSON.stringify(c,null,2))"
+            echo "Update files will be signed."
+          else
+            echo "::warning::The TAURI_SIGNING_PRIVATE_KEY secret is not set, so this release can't be installed from inside the app (users are pointed to the download page instead)."
+          fi
+
+      - name: Build and upload installers
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          releaseDraft: true
+          args: ${{ matrix.args }}
+          # latest.json is written once by the publish job (parallel builds
+          # would race to update it)
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: true
+
+      - name: Upload portable Windows executable
+        if: matrix.platform == 'windows-latest'
+        uses: actions/github-script@v9
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+        with:
+          script: |
+            const fs = require('fs');
+            const releaseId = Number(process.env.RELEASE_ID);
+            const name = `Sheets_${process.env.VERSION}_x64-portable.exe`;
+            const data = fs.readFileSync('src-tauri/target/release/sheets.exe');
+            const assets = await github.paginate(github.rest.repos.listReleaseAssets, { ...context.repo, release_id: releaseId });
+            for (const asset of assets.filter((a) => a.name === name)) {
+              await github.rest.repos.deleteReleaseAsset({ ...context.repo, asset_id: asset.id });
+            }
+            await github.rest.repos.uploadReleaseAsset({
+              ...context.repo,
+              release_id: releaseId,
+              name,
+              data,
+              headers: { 'content-type': 'application/octet-stream', 'content-length': data.length },
+            });
+
+  publish-release:
+    name: Publish release
+    needs: [create-release, build]
+    if: needs.create-release.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Write the in-app update manifest (latest.json)
+        uses: actions/github-script@v9
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          TAG: ${{ needs.create-release.outputs.tag }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+        with:
+          script: |
+            // The app reads releases/latest/download/latest.json: one entry per
+            // platform with the download URL and its minisign signature.
+            const release_id = Number(process.env.RELEASE_ID);
+            const { TAG, VERSION } = process.env;
+            const assets = await github.paginate(github.rest.repos.listReleaseAssets, { ...context.repo, release_id });
+            const sigs = assets.filter((a) => a.name.endsWith('.sig'));
+            if (!sigs.length) {
+              core.warning('No update signatures in this release: latest.json not written (set the TAURI_SIGNING_PRIVATE_KEY secret).');
+              return;
+            }
+            const url = (name) =>
+              `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${TAG}/${encodeURIComponent(name)}`;
+            const platforms = {};
+            for (const sig of sigs) {
+              const target = sig.name.slice(0, -'.sig'.length);
+              if (!assets.some((a) => a.name === target)) {
+                core.warning(`${sig.name} has no matching file`);
+                continue;
+              }
+              const { data } = await github.rest.repos.getReleaseAsset({
+                ...context.repo,
+                asset_id: sig.id,
+                headers: { accept: 'application/octet-stream' },
+              });
+              const entry = { signature: Buffer.from(data).toString('utf8').trim(), url: url(target) };
+              const n = target.toLowerCase();
+              if (n.endsWith('.app.tar.gz')) {
+                const arch = /aarch64|arm64/.test(n) ? 'aarch64' : 'x86_64';
+                platforms[`darwin-${arch}`] = entry;
+                platforms[`darwin-${arch}-app`] = entry;
+              } else if (n.endsWith('-setup.exe')) {
+                platforms['windows-x86_64'] = entry;
+                platforms['windows-x86_64-nsis'] = entry;
+              } else if (n.endsWith('.msi')) {
+                platforms['windows-x86_64-msi'] = entry;
+                platforms['windows-x86_64'] ??= entry;
+              } else if (n.endsWith('.appimage')) {
+                platforms['linux-x86_64'] = entry;
+                platforms['linux-x86_64-appimage'] = entry;
+              }
+            }
+            const { data: release } = await github.rest.repos.getRelease({ ...context.repo, release_id });
+            const manifest = { version: VERSION, notes: release.body ?? '', pub_date: new Date().toISOString(), platforms };
+            for (const old of assets.filter((a) => a.name === 'latest.json')) {
+              await github.rest.repos.deleteReleaseAsset({ ...context.repo, asset_id: old.id });
+            }
+            const body = Buffer.from(JSON.stringify(manifest, null, 2));
+            await github.rest.repos.uploadReleaseAsset({
+              ...context.repo,
+              release_id,
+              name: 'latest.json',
+              data: body,
+              headers: { 'content-type': 'application/json', 'content-length': body.length },
+            });
+            core.notice(`latest.json: ${Object.keys(platforms).join(', ')}`);
+
+      - name: Publish the draft
+        uses: actions/github-script@v9
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          TAG: ${{ needs.create-release.outputs.tag }}
+        with:
+          script: |
+            // Send tag_name so publishing (re)creates the tag
+            await github.rest.repos.updateRelease({
+              ...context.repo,
+              release_id: Number(process.env.RELEASE_ID),
+              tag_name: process.env.TAG,
+              draft: false,
+              prerelease: false,
+              make_latest: 'true',
+            });

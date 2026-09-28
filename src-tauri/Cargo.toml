@@ -1,0 +1,50 @@
+[package]
+name = "sheets"
+version = "0.4.0"
+description = "Sheets - a lightweight, reliable spreadsheet desktop app"
+authors = ["Dipendra Bhardwaj"]
+license = "MIT"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "sheets_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ironcalc = "0.8"
+ironcalc_base = "0.8"
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }
+csv = "1"
+encoding_rs = "0.8"
+iana-time-zone = "0.1"
+semver = "1"
+
+# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
+# Same HTTP/TLS stack as the updater (no extra crates): used to read the
+# latest release from the GitHub API
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
