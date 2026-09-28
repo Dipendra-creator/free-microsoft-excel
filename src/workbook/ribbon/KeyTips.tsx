@@ -20,6 +20,10 @@ export const TAB_KEYS: Record<string, string> = {
 
 /** Excel's own KeyTips for the most used commands (label prefix → keys). */
 const KNOWN: [string, string][] = [
+  ["Clipboard Settings", "FO"],
+  ["Font Settings", "FN"],
+  ["Alignment Settings", "FA"],
+  ["Number Settings", "FM"],
   ["Paste", "V"],
   ["Cut", "X"],
   ["Copy", "C"],
@@ -90,7 +94,12 @@ interface Tip {
 }
 
 function labelOf(el: HTMLElement): string {
-  const raw = el.getAttribute("aria-label") || el.getAttribute("title") || el.textContent || "";
+  const raw =
+    el.getAttribute("aria-label") ||
+    el.getAttribute("title") ||
+    el.closest(".rb-combo")?.getAttribute("title") ||
+    el.textContent ||
+    "";
   return raw.replace(/\s*\(.*\)\s*$/, "").replace(/\s+/g, " ").trim();
 }
 
@@ -99,7 +108,12 @@ function controlTips(): Tip[] {
   const root = document.querySelector(".ribbon-content");
   if (!root) return [];
   const els = Array.from(root.querySelectorAll<HTMLElement>("button, input, select")).filter(
-    (el) => !el.classList.contains("ribbon-collapse") && !(el as HTMLButtonElement).disabled && el.offsetParent !== null,
+    (el) =>
+      !el.classList.contains("ribbon-collapse") &&
+      !(el as HTMLButtonElement).disabled &&
+      el.offsetParent !== null &&
+      // A combo box is reached through its text box
+      !(el.tagName === "BUTTON" && el.closest(".rb-combo")),
   );
   const used = new Set<string>();
   const assigned = new Map<HTMLElement, string>();
@@ -116,29 +130,38 @@ function controlTips(): Tip[] {
       assigned.set(el, known[1]);
     }
   }
+  const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   for (const el of els) {
     if (assigned.has(el)) continue;
     const words = labelOf(el).toUpperCase().replace(/[^A-Z0-9 ]/g, "").split(" ").filter(Boolean);
     const letters = words.join("");
-    const candidates = [
-      ...(words.length > 1 ? [words[0][0] + words[1][0]] : []),
-      ...[...letters].slice(1).map((ch) => letters[0] + ch),
-      ...["Y", "Z", "Q", "J"].flatMap((a) => [...letters].map((ch) => a + ch)),
-    ].filter((k) => k.length === 2);
-    const single = letters[0];
-    let keys = single && !taken(single) && words.length === 1 && letters.length > 0 ? single : candidates.find((k) => !taken(k));
+    const candidates: string[] = [];
+    // One letter for one-word labels, then initials, then the label's letters
+    if (words.length === 1 && letters) candidates.push(letters[0]);
+    if (words.length > 1) candidates.push(words[0][0] + words[1][0]);
+    for (const ch of letters.slice(1)) candidates.push(letters[0] + ch);
+    let keys = candidates.find((k) => !taken(k));
+    // Any free two-letter key (a finite pool, so this always ends)
     if (!keys) {
-      let n = 1;
-      while (taken(String(n))) n++;
-      keys = String(n);
+      outer: for (const a of ALPHA) {
+        for (const b of ALPHA) {
+          if (!taken(a + b)) {
+            keys = a + b;
+            break outer;
+          }
+        }
+      }
     }
+    if (!keys) continue;
     used.add(keys);
     assigned.set(el, keys);
   }
-  return els.map((el) => {
-    const r = el.getBoundingClientRect();
-    return { el, keys: assigned.get(el)!, x: r.left + r.width / 2, y: r.bottom - 6 };
-  });
+  return els
+    .filter((el) => assigned.has(el))
+    .map((el) => {
+      const r = el.getBoundingClientRect();
+      return { el, keys: assigned.get(el)!, x: r.left + r.width / 2, y: r.bottom - 6 };
+    });
 }
 
 function tabTips(): Tip[] {

@@ -471,8 +471,13 @@ input.tiny {
   gap: 8px;
   margin: 6px 0;
 }
+.series-values .fc-row .lbl {
+  min-width: 0;
+  white-space: nowrap;
+}
 .series-values .fc-row input {
-  width: 90px;
+  width: 0;
+  min-width: 0;
 }
 .fc-row.disabled {
   opacity: 0.5;
