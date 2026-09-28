@@ -11,10 +11,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
-    branches:
-      - main
-      # One-off: restores the v0.2.0 tag on the release built from this branch.
-      - claude/adoring-cori-us8u2f
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -66,18 +63,24 @@ jobs:
               .replaceAll('{{REPO}}', repo);
             const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
             let existing = releases.find((r) => r.tag_name === TAG);
-            // GitHub resets a draft's tag to "untagged-…" when the draft is edited
-            // without tag_name; find such a release by name and restore its tag.
+            // A release published while its commit's workflow files were not on
+            // the default branch is left "untagged-…": the Actions token may not
+            // create such a tag (it lacks the `workflows` permission). Once the
+            // workflows are on main, restore the tag — on the built commit if
+            // allowed, otherwise on the commit being run.
             const orphan = releases.find((r) => r.name === `Sheets ${TAG}` && r.tag_name.startsWith('untagged-'));
             if (!existing && orphan) {
-              const { data } = await github.rest.repos.updateRelease({
-                ...context.repo,
-                release_id: orphan.id,
-                tag_name: TAG,
-                target_commitish: orphan.target_commitish,
-              });
+              const retag = (target_commitish) =>
+                github.rest.repos.updateRelease({ ...context.repo, release_id: orphan.id, tag_name: TAG, target_commitish });
+              let result;
+              try {
+                result = await retag(orphan.target_commitish);
+              } catch (e) {
+                core.warning(`Could not tag ${orphan.target_commitish} (${e.message}); tagging ${context.sha} instead.`);
+                result = await retag(context.sha);
+              }
               core.notice(`Restored tag ${TAG} on release ${orphan.id}`);
-              existing = data;
+              existing = result.data;
             }
             core.setOutput('skip', 'false');
             if (existing && !existing.draft && context.eventName === 'push' && context.ref.startsWith('refs/heads/')) {
@@ -195,7 +198,7 @@ jobs:
           TAG: ${{ needs.create-release.outputs.tag }}
         with:
           script: |
-            // tag_name must be sent again, or GitHub publishes the draft untagged
+            // Send tag_name so publishing (re)creates the tag
             await github.rest.repos.updateRelease({
               ...context.repo,
               release_id: Number(process.env.RELEASE_ID),
