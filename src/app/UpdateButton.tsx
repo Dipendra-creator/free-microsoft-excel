@@ -153,12 +153,18 @@ export function UpdateButton() {
                   </div>
                 )}
                 {s.phase === "error" && s.error && <p className="up-error">{s.error}</p>}
-                {!s.installable && (
-                  <p className="muted small">
-                    This release can't be installed from inside the app. Download it from the release page and run the
-                    installer; your settings and recent files are kept.
-                  </p>
-                )}
+                {!s.installable &&
+                  (s.portable ? (
+                    <p className="muted small">
+                      You're using the portable version of {APP_NAME}. Download the new portable .exe from the release
+                      page and use it instead of this one; your settings and recent files are kept.
+                    </p>
+                  ) : (
+                    <p className="muted small">
+                      This release can't be installed from inside the app. Download it from the release page and run
+                      the installer; your settings and recent files are kept.
+                    </p>
+                  ))}
                 <div className="up-actions">
                   <button className="btn link" onClick={() => openUrl(page).catch((e) => app.error(errorMessage(e)))}>
                     Release notes

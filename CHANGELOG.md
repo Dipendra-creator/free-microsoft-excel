@@ -2,6 +2,21 @@
 
 All notable changes to Sheets. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.4.1] — 2026-09-28
+
+### Updates
+- First release with signed update files: Sheets 0.4.0 shows **Update
+  available** in the title bar and installs this version in one click.
+- The portable Windows `.exe` no longer installs a second copy of Sheets when
+  it updates. It announces the new version and links to the new portable file.
+
+### Project
+- Sheets is open source under the MIT License.
+- The project moved to
+  [github.com/Dipendra-creator/sheets-desktop](https://github.com/Dipendra-creator/sheets-desktop);
+  update checks, links and the About box use the new address (the old one
+  redirects, so 0.4.0 still finds this update).
+
 ## [0.4.0] — 2026-09-28
 
 ### In-app updates

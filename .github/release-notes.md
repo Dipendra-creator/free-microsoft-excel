@@ -25,10 +25,14 @@ Open the `.dmg` and drag **Sheets** to **Applications**. The app is not notarize
 
 ## What's new in {{VERSION}}
 
-**In-app updates**
-- Sheets now checks for new versions. When one is out, an **Update available** button appears in the title bar — click it to see what's new, then **Update now** and **Restart to update**.
-- Updates are downloaded in the background, verified with the project's signing key and installed in one step. Workbooks with unsaved changes are kept and offered again on the start screen right after the restart.
-- Help → **Check for Updates** checks on demand; Options → *Check for new versions automatically* turns the background check off.
+**One-click updates**
+- This is the first release with signed update files. If you have Sheets 0.4.0, the **Update available** button in the title bar installs it: **Update now**, then **Restart to update**. Workbooks with unsaved changes are kept and offered again right after the restart.
+- The portable Windows `.exe` no longer installs a second copy of Sheets: it announces the new version and links to the new portable file.
+
+**Open source**
+- Sheets is now open source under the MIT License, and the project lives at github.com/{{REPO}}.
+
+**Also new in 0.4:** in-app updates. Sheets checks for new versions shortly after it starts and every 6 hours; Help → **Check for Updates** checks on demand, and Options → *Check for new versions automatically* turns the background check off.
 
 > Updating from 0.3.0 or earlier? Install this version once from the files above — from now on Sheets updates itself.
 

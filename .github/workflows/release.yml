@@ -196,6 +196,12 @@ jobs:
             const releaseId = Number(process.env.RELEASE_ID);
             const name = `Sheets_${process.env.VERSION}_x64-portable.exe`;
             const data = fs.readFileSync('src-tauri/target/release/sheets.exe');
+            // The bundler marks the exe inside each installer with its type and then
+            // restores the unmarked build; unmarked is how the app knows it's portable
+            // (it then offers updates as a download instead of running the installer).
+            if (!data.includes(Buffer.from('__TAURI_BUNDLE_TYPE_VAR_UNK'))) {
+              core.warning('sheets.exe carries an installer bundle type: the portable copy would try to install updates.');
+            }
             const assets = await github.paginate(github.rest.repos.listReleaseAssets, { ...context.repo, release_id: releaseId });
             for (const asset of assets.filter((a) => a.name === name)) {
               await github.rest.repos.deleteReleaseAsset({ ...context.repo, asset_id: asset.id });

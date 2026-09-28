@@ -345,6 +345,8 @@ export interface UpdateStatus {
   date: number | null;
   /** Installs inside the app; otherwise `page` is opened to download it. */
   installable: boolean;
+  /** Running the portable Windows .exe: updates are downloaded by hand. */
+  portable: boolean;
   page: string | null;
   downloaded: number;
   total: number | null;
