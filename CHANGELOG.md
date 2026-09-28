@@ -26,6 +26,9 @@ All notable changes to Sheets. Versions follow [Semantic Versioning](https://sem
 - CSV/TXT export writes a UTF-8 BOM (Excel compatibility) and never rounds
   numbers to their display format.
 - Fixed: pasting text whose rows have different numbers of columns dropped rows.
+- CSV/TXT files larger than a worksheet (1,048,576 rows × 16,384 columns) are no
+  longer truncated silently: Sheets says what didn't fit and never overwrites
+  the original file.
 
 ### New features
 - AutoFilter (Ctrl+Shift+L): value checklist with counts, search, sort, clear,

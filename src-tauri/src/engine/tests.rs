@@ -624,3 +624,20 @@ fn macro_workbooks_are_never_overwritten() {
     assert!(Location::for_save("/tmp/book.xlsx").is_ok());
     assert!(Location::from_path("/tmp/book.xlsm").unwrap().is_macro_enabled());
 }
+
+#[test]
+fn oversized_csv_is_reported_not_silently_truncated() {
+    use crate::storage::{FileStore, Location, WorkbookStore};
+    let dir = std::env::temp_dir().join(format!("sheets-wide-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("wide.csv");
+    let line: Vec<String> = (1..=16_390).map(|i| i.to_string()).collect();
+    std::fs::write(&path, format!("{}\n1,2\n", line.join(","))).unwrap();
+    let loaded = FileStore.load_checked(&Location::from_path(&path).unwrap(), &test_config()).unwrap();
+    let warning = loaded.warning.expect("a warning about the lost columns");
+    assert!(warning.contains("6 columns"), "{warning}");
+    let s = Session::new("w".into(), "wide".into(), loaded.model, None);
+    assert_eq!(text(&s, 1, 16_384), "16384");
+    assert_eq!(text(&s, 2, 2), "2");
+    let _ = std::fs::remove_dir_all(&dir);
+}

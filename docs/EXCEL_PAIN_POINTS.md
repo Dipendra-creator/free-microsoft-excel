@@ -122,7 +122,10 @@ columns.
 ✅ A real silent-data-loss path we found in our own engine was fixed: pasted text
 whose rows have different numbers of columns (common when copying from web
 pages) used to drop rows; it is now padded and every row arrives.
-🗺️ Planned: a warning whenever an import or paste would exceed sheet limits.
+✅ Opening a CSV/TXT file larger than a worksheet (1,048,576 rows × 16,384
+columns) loads what fits, says exactly how many rows/columns did not, and never
+overwrites the original file — saving asks for a new file instead.
+🗺️ Planned: the same warning for pastes that would run past the sheet edge.
 
 ---
 

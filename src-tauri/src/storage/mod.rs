@@ -100,9 +100,22 @@ impl Location {
     }
 }
 
+/// A loaded model plus a warning when not everything could be loaded.
+pub struct Loaded {
+    pub model: Model<'static>,
+    pub warning: Option<String>,
+}
+
 pub trait WorkbookStore: Send + Sync {
     /// Loads a model from a location.
     fn load(&self, location: &Location, config: &EngineConfig) -> AppResult<Model<'static>>;
+    /// Like `load`, but reports data that could not be loaded.
+    fn load_checked(&self, location: &Location, config: &EngineConfig) -> AppResult<Loaded> {
+        Ok(Loaded {
+            model: self.load(location, config)?,
+            warning: None,
+        })
+    }
     /// Persists the session at a location.
     fn save(&self, session: &Session, location: &Location, config: &EngineConfig) -> AppResult<()>;
 }

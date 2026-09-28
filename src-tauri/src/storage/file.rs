@@ -9,7 +9,8 @@ use std::{
 use ironcalc::{export::save_xlsx_to_writer, import::load_from_xlsx_bytes};
 use ironcalc_base::Model;
 
-use super::{FileFormat, Location, WorkbookStore};
+use super::{FileFormat, Loaded, Location, WorkbookStore};
+use crate::engine::a1::{LAST_COLUMN, LAST_ROW};
 use crate::{
     engine::{EngineConfig, Session},
     error::{AppError, AppResult},
@@ -20,6 +21,10 @@ pub struct FileStore;
 
 impl WorkbookStore for FileStore {
     fn load(&self, location: &Location, config: &EngineConfig) -> AppResult<Model<'static>> {
+        Ok(self.load_checked(location, config)?.model)
+    }
+
+    fn load_checked(&self, location: &Location, config: &EngineConfig) -> AppResult<Loaded> {
         let bytes = fs::read(&location.path)?;
         let name = location.display_name();
         match location.format {
@@ -27,7 +32,10 @@ impl WorkbookStore for FileStore {
                 let mut workbook =
                     load_from_xlsx_bytes(&bytes, &name, config.locale, config.timezone)?;
                 workbook.name = name;
-                Ok(Model::from_workbook(workbook, config.language)?)
+                Ok(Loaded {
+                    model: Model::from_workbook(workbook, config.language)?,
+                    warning: None,
+                })
             }
             FileFormat::Csv | FileFormat::Tsv => {
                 let text = decode_text(&bytes);
@@ -123,7 +131,9 @@ fn sniff_delimiter(text: &str) -> u8 {
         .unwrap_or(b',')
 }
 
-pub fn load_delimited(text: &str, delimiter: u8, name: &str, config: &EngineConfig) -> AppResult<Model<'static>> {
+/// Loads delimited text. Data beyond the sheet limits (1,048,576 rows ×
+/// 16,384 columns) is never dropped silently: it is counted and reported.
+pub fn load_delimited(text: &str, delimiter: u8, name: &str, config: &EngineConfig) -> AppResult<Loaded> {
     let bytes = text.as_bytes();
     let mut model = config.new_model(name)?;
     let mut reader = csv::ReaderBuilder::new()
@@ -131,14 +141,18 @@ pub fn load_delimited(text: &str, delimiter: u8, name: &str, config: &EngineConf
         .has_headers(false)
         .flexible(true)
         .from_reader(bytes);
+    let mut rows = 0usize;
+    let mut widest = 0usize;
     for (i, record) in reader.byte_records().enumerate() {
         let record = record.map_err(|e| AppError::Io(format!("Invalid CSV: {e}")))?;
+        rows = i + 1;
+        widest = widest.max(record.len());
         let row = i as i32 + 1;
-        if row > 1_048_576 {
-            break;
+        if row > LAST_ROW {
+            continue;
         }
         for (j, field) in record.iter().enumerate() {
-            if field.is_empty() {
+            if field.is_empty() || j as i32 >= LAST_COLUMN {
                 continue;
             }
             let value = String::from_utf8_lossy(field).to_string();
@@ -150,5 +164,18 @@ pub fn load_delimited(text: &str, delimiter: u8, name: &str, config: &EngineConf
         }
     }
     model.evaluate();
-    Ok(model)
+    let mut lost = Vec::new();
+    if rows > LAST_ROW as usize {
+        lost.push(format!("{} rows (the file has {rows}; a sheet holds {LAST_ROW})", rows - LAST_ROW as usize));
+    }
+    if widest > LAST_COLUMN as usize {
+        lost.push(format!("{} columns (the widest row has {widest}; a sheet holds {LAST_COLUMN})", widest - LAST_COLUMN as usize));
+    }
+    let warning = (!lost.is_empty()).then(|| {
+        format!(
+            "This file is larger than a worksheet, so it was not loaded completely: {} did not fit.\n\nTo protect your data, the original file will not be overwritten. Split the file, or save what was loaded as a new workbook.",
+            lost.join(" and ")
+        )
+    });
+    Ok(Loaded { model, warning })
 }

@@ -158,7 +158,7 @@ export function WorkbookView({ info }: { info: WorkbookInfo }) {
   const saveAs = async (): Promise<boolean> => {
     if (ctl.edit) await ctl.commitEdit("none");
     const current = ctl.info.path;
-    const source = ctl.info.sourcePath?.replace(/\.xlsm$/i, ".xlsx");
+    const source = ctl.info.sourcePath?.replace(/\.[^.\\/]+$/, ".xlsx");
     const path = await saveDialog({
       title: "Save As",
       defaultPath: current ?? source ?? `${ctl.info.title}.xlsx`,

@@ -332,6 +332,8 @@ export interface TemplatePreview {
 export interface OpenResult {
   info: WorkbookInfo;
   alreadyOpen: boolean;
+  /** The file could not be loaded completely (shown to the user). */
+  warning?: string;
 }
 
 export interface PasteResult {

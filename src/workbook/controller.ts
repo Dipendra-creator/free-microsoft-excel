@@ -1515,9 +1515,12 @@ export class WorkbookController {
     if (this.edit) await this.commitEdit("none");
     if (!this.info.path) {
       if (this.info.sourcePath) {
+        const macros = /\.xlsm$/i.test(this.info.sourcePath);
         const answer = await this.ui?.ask(
           "Save a Copy",
-          "This workbook contains macros (.xlsm). Sheets doesn't run or keep macros, so your original file is left untouched and a copy is saved as an Excel Workbook (.xlsx).",
+          macros
+            ? "This workbook contains macros (.xlsm). Sheets doesn't run or keep macros, so your original file is left untouched and a copy is saved as an Excel Workbook (.xlsx)."
+            : "This file was not loaded completely, so your original file is left untouched. Save what was loaded as a new Excel Workbook (.xlsx).",
           [
             { label: "Save as .xlsx", value: "ok", primary: true },
             { label: "Cancel", value: "cancel" },

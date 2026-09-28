@@ -98,12 +98,13 @@ export default function App() {
         const res = await api.openWorkbook(path);
         await show(res.info, res.alreadyOpen);
         refreshRecent();
+        if (res.warning) ask(APP_NAME, res.warning, [{ label: "OK", value: "ok", primary: true }], "warning");
       } catch (e) {
         error(errorMessage(e));
         refreshRecent();
       }
     },
-    [show, error, refreshRecent],
+    [show, error, refreshRecent, ask],
   );
 
   const openPathRef = useRef(openPath);
@@ -155,7 +156,9 @@ export default function App() {
         } else if (label.startsWith("book-")) {
           initial = await api.info(label.slice(5));
         } else if (appInfo.startupFile) {
-          initial = (await api.openWorkbook(appInfo.startupFile)).info;
+          const res = await api.openWorkbook(appInfo.startupFile);
+          initial = res.info;
+          if (res.warning) ask(APP_NAME, res.warning, [{ label: "OK", value: "ok", primary: true }], "warning");
         } else if (!appInfo.settings.showStartScreen) {
           initial = await api.newWorkbook();
         }
