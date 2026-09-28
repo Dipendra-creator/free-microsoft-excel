@@ -197,9 +197,40 @@ pub fn interpret(input: &str, day_first: bool) -> Option<Parsed> {
         .or_else(|| parse_time(t))
 }
 
+/// Digit strings that a spreadsheet would silently damage when storing them as
+/// numbers: identifiers with leading zeros ("00501", "007") lose the zeros, and
+/// integers longer than 15 digits (card numbers, IBAN digits, database ids) lose
+/// their last digits to floating-point precision. Such input is kept as text
+/// (returned with the quote prefix that forces text storage).
+pub fn protect_literal(input: &str) -> Option<String> {
+    let t = input.trim();
+    if t.len() < 2 || !t.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let leading_zero = t.starts_with('0');
+    let too_long = t.trim_start_matches('0').len() > 15;
+    if leading_zero || too_long {
+        Some(format!("'{t}"))
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn literals_that_must_stay_text() {
+        assert_eq!(protect_literal("00501").as_deref(), Some("'00501"));
+        assert_eq!(protect_literal("4111222233334444").as_deref(), Some("'4111222233334444"));
+        assert_eq!(protect_literal("0"), None);
+        assert_eq!(protect_literal("42"), None);
+        assert_eq!(protect_literal("123456789012345"), None);
+        assert_eq!(protect_literal("0.5"), None);
+        assert_eq!(protect_literal("-001"), None);
+        assert_eq!(protect_literal("SEPT1"), None);
+    }
 
     #[test]
     fn dates() {

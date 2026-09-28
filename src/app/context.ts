@@ -18,6 +18,8 @@ export interface AppApi {
   /** Workbook shown in this window, if any. */
   current: WorkbookInfo | null;
   newWorkbook: (template?: string) => Promise<void>;
+  /** Shows a workbook created by the backend (recovered file, old version). */
+  showBook: (info: WorkbookInfo) => Promise<void>;
   openPath: (path: string) => Promise<void>;
   browse: () => Promise<void>;
   ask: (title: string, message: string, buttons: AskButton[], icon?: string) => Promise<string>;

@@ -7,6 +7,7 @@ import { CATEGORIES, FUNCTIONS, MOST_USED } from "../../lib/functions";
 import { CF_PRESETS } from "../../lib/galleries";
 import type { WorkbookController } from "../controller";
 import { addRule } from "../menus";
+import { ChartDialog, HealthCheckDialog, LinkDialog, NoteDialog, PivotDialog, SwitchWindowsDialog, TextToColumnsDialog } from "./FeatureDialogs";
 import { FormatCellsDialog } from "./FormatCells";
 
 export interface DialogState {
@@ -979,6 +980,20 @@ export function DialogHost({ ctl, state, onClose }: { ctl: WorkbookController; s
       return <CfRule ctl={ctl} kind={String(p.kind ?? "greaterThan")} onClose={onClose} />;
     case "cfManage":
       return <CfManage ctl={ctl} onClose={onClose} />;
+    case "note":
+      return <NoteDialog ctl={ctl} onClose={onClose} />;
+    case "link":
+      return <LinkDialog ctl={ctl} onClose={onClose} />;
+    case "chart":
+      return <ChartDialog ctl={ctl} id={String(p.id ?? "")} onClose={onClose} />;
+    case "textToColumns":
+      return <TextToColumnsDialog ctl={ctl} onClose={onClose} />;
+    case "pivot":
+      return <PivotDialog ctl={ctl} onClose={onClose} />;
+    case "healthCheck":
+      return <HealthCheckDialog ctl={ctl} onClose={onClose} />;
+    case "switchWindows":
+      return <SwitchWindowsDialog ctl={ctl} onClose={onClose} />;
     case "insertCells":
       return (
         <Choice

@@ -4,6 +4,16 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   AppInfo,
+  BookWindow,
+  ChartSpec,
+  FilterValue,
+  HealthReport,
+  Note,
+  PivotSpec,
+  RangeValue,
+  RecoveryItem,
+  SplitOptions,
+  VersionItem,
   CellInfo,
   CellsChunk,
   ConditionalFormat,
@@ -184,6 +194,42 @@ export const api = {
     mut<WorkbookInfo>("cf_add", { book, sheet, range, rule }),
   cfDelete: (book: Book, sheet: number, index: number) => mut<WorkbookInfo>("cf_delete", { book, sheet, index }),
   cfClear: (book: Book, sheet: number, rect: Rect | null) => mut<WorkbookInfo>("cf_clear", { book, sheet, rect }),
+
+  // Notes
+  setNote: (book: Book, sheet: number, row: number, col: number, text: string) =>
+    mut<WorkbookInfo>("note_set", { book, sheet, row, col, text }),
+  deleteNotes: (book: Book, sheet: number, rect: Rect) => mut<WorkbookInfo>("notes_delete", { book, sheet, rect }),
+  notes: (book: Book, sheet: number) => invoke<Note[]>("notes_list", { book, sheet }),
+
+  // Charts
+  saveChart: (book: Book, sheet: number, chart: ChartSpec) =>
+    mut<[string, WorkbookInfo]>("chart_save", { book, sheet, chart }),
+  deleteChart: (book: Book, sheet: number, id: string) => mut<WorkbookInfo>("chart_delete", { book, sheet, id }),
+  rangeValues: (book: Book, sheet: number, rect: Rect) => invoke<RangeValue[][]>("range_values", { book, sheet, rect }),
+
+  // AutoFilter
+  filterToggle: (book: Book, sheet: number, rect: Rect) => mut<WorkbookInfo>("filter_toggle", { book, sheet, rect }),
+  filterValues: (book: Book, sheet: number, col: number) => invoke<FilterValue[]>("filter_values", { book, sheet, col }),
+  filterSet: (book: Book, sheet: number, col: number, values: string[] | null) =>
+    mut<WorkbookInfo>("filter_set", { book, sheet, col, values }),
+  filterClear: (book: Book, sheet: number) => mut<WorkbookInfo>("filter_clear", { book, sheet }),
+  filterReapply: (book: Book, sheet: number) => mut<WorkbookInfo>("filter_reapply", { book, sheet }),
+  filterSort: (book: Book, sheet: number, col: number, ascending: boolean) =>
+    mut<WorkbookInfo>("filter_sort", { book, sheet, col, ascending }),
+
+  // Data tools
+  textToColumns: (book: Book, sheet: number, rect: Rect, options: SplitOptions) =>
+    mut<[Rect, WorkbookInfo]>("text_to_columns", { book, sheet, rect, options }),
+  createPivot: (book: Book, sheet: number, spec: PivotSpec) => mut<WorkbookInfo>("pivot_create", { book, sheet, spec }),
+  healthCheck: (book: Book) => invoke<HealthReport>("health_check", { book }),
+
+  // AutoRecover & versions
+  recoveryList: () => invoke<RecoveryItem[]>("recovery_list"),
+  recoveryOpen: (file: string) => mut<WorkbookInfo>("recovery_open", { file }),
+  recoveryDiscard: (file: string) => mut<RecoveryItem[]>("recovery_discard", { file }),
+  versions: (path: string) => invoke<VersionItem[]>("versions_list", { path }),
+  versionOpen: (file: string, title: string) => mut<WorkbookInfo>("version_open", { file, title }),
+  bookWindows: () => invoke<BookWindow[]>("list_book_windows"),
 };
 
 export function errorMessage(e: unknown): string {

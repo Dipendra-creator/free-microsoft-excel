@@ -17,6 +17,14 @@ pub struct Settings {
     pub show_start_screen: bool,
     /// None = automatic (by region).
     pub day_first: Option<bool>,
+    /// Keep "00501" and 16+ digit numbers as text instead of damaging them.
+    pub preserve_literals: bool,
+    /// Write a UTF-8 BOM in CSV/TXT files so Excel reads accents correctly.
+    pub csv_bom: bool,
+    /// AutoRecover snapshot delay in seconds (0 = off).
+    pub autorecover_seconds: u32,
+    /// Previous versions kept per file when saving (0 = off).
+    pub keep_versions: u32,
 }
 
 impl Default for Settings {
@@ -29,6 +37,10 @@ impl Default for Settings {
             user_name: default_user_name(),
             show_start_screen: true,
             day_first: None,
+            preserve_literals: true,
+            csv_bom: true,
+            autorecover_seconds: 30,
+            keep_versions: 20,
         }
     }
 }

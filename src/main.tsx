@@ -7,6 +7,7 @@ import "./styles/ribbon.css";
 import "./styles/workbook.css";
 import "./styles/menus.css";
 import "./styles/dialogs.css";
+import "./styles/features.css";
 
 // Disable the WebView context menu outside inputs (the app provides its own menus)
 window.addEventListener("contextmenu", (e) => {

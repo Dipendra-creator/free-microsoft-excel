@@ -108,6 +108,22 @@ function commandList(ctl: WorkbookController): SearchCommand[] {
     { label: "Zoom", icon: "zoom", run: d("zoom") },
     { label: "Keyboard Shortcuts", icon: "keyboard", run: d("shortcuts") },
     { label: "Save As", hint: "F12", icon: "saveAs", run: () => ctl.ui?.saveAs() },
+    { label: "Filter", hint: "Ctrl+Shift+L", icon: "filter", run: () => ctl.toggleFilter() },
+    { label: "Clear Filter", icon: "clear", run: () => ctl.clearFilter() },
+    { label: "Text to Columns", icon: "textToColumns", run: d("textToColumns") },
+    { label: "PivotTable", icon: "pivot", run: d("pivot") },
+    { label: "Insert Column Chart", hint: "Alt+F1", icon: "chartColumn", run: () => ctl.insertChart("column") },
+    { label: "Insert Line Chart", icon: "chartLine", run: () => ctl.insertChart("line") },
+    { label: "Insert Pie Chart", icon: "chartPie", run: () => ctl.insertChart("pie") },
+    { label: "Insert Bar Chart", icon: "chartBar", run: () => ctl.insertChart("bar") },
+    { label: "Insert Scatter Chart", icon: "chartScatter", run: () => ctl.insertChart("scatter") },
+    { label: "New Note", hint: "Shift+F2", icon: "comment", run: d("note") },
+    { label: "Show All Notes", icon: "comment", run: () => { ctl.showAllNotes = !ctl.showAllNotes; ctl.emit(); } },
+    { label: "Insert Link", hint: "Ctrl+K", icon: "link", run: d("link") },
+    { label: "Check Workbook (find errors)", icon: "health", run: d("healthCheck") },
+    { label: "Print / Save as PDF", hint: "Ctrl+P", icon: "print", run: () => ctl.ui?.backstage("print") },
+    { label: "Recover Unsaved Workbooks", icon: "recover", run: () => ctl.ui?.backstage("open") },
+    { label: "Switch Windows", icon: "switchWindows", run: d("switchWindows") },
     ...MOST_USED.map((f) => ({ label: `Insert ${f} function`, icon: "fx", run: () => ctl.insertFunction(f) })),
   ];
 }
@@ -204,6 +220,10 @@ export function WorkbookView({ info }: { info: WorkbookInfo }) {
       dialog: (name, props) => {
         if (name === "closeWorkbook") {
           closeWorkbook();
+          return;
+        }
+        if (name === "print") {
+          setBackstage("print");
           return;
         }
         setDialog({ name, props });

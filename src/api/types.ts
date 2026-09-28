@@ -98,7 +98,105 @@ export interface SheetLayout {
   rowStyles: [number, number][];
   colStyles: [number, number, number][];
   styles: StyleDto[];
+  /** [row, col] of cells with a note. */
+  notes: [number, number][];
+  filter?: FilterDto;
+  charts: ChartSpec[];
 }
+
+export interface FilterDto {
+  r1: number;
+  c1: number;
+  r2: number;
+  c2: number;
+  /** Columns with active criteria. */
+  active: number[];
+}
+
+export type ChartKind = "column" | "bar" | "line" | "area" | "pie" | "doughnut" | "scatter";
+
+export interface ChartSpec {
+  id: string;
+  kind: ChartKind;
+  range: Rect;
+  title: string;
+  seriesInRows: boolean;
+  legend: boolean;
+  row: number;
+  col: number;
+  dx: number;
+  dy: number;
+  width: number;
+  height: number;
+}
+
+export interface Note {
+  row: number;
+  col: number;
+  author: string;
+  text: string;
+}
+
+export interface FilterValue {
+  text: string;
+  count: number;
+  checked: boolean;
+}
+
+export interface SplitOptions {
+  delimiters: string;
+  consecutive: boolean;
+  qualifier: string;
+}
+
+export interface PivotSpec {
+  source: Rect;
+  rowsCol: number;
+  colsCol: number | null;
+  valueCol: number | null;
+  func: "sum" | "count" | "average" | "min" | "max";
+}
+
+export interface Issue {
+  sheet: number;
+  row: number;
+  col: number;
+  severity: "error" | "warning" | "info";
+  kind: string;
+  message: string;
+}
+
+export interface HealthReport {
+  issues: Issue[];
+  cells: number;
+  formulas: number;
+  truncated: boolean;
+}
+
+export interface RecoveryItem {
+  file: string;
+  title: string;
+  originalPath: string | null;
+  savedAt: number;
+  kind: "crashed" | "unsaved";
+  size: number;
+}
+
+export interface VersionItem {
+  file: string;
+  savedAt: number;
+  size: number;
+}
+
+export interface BookWindow {
+  label: string;
+  book: string;
+  title: string;
+  dirty: boolean;
+}
+
+/** [number or null, displayed text] */
+export type RangeValue = [number | null, string];
 
 export interface SheetInfo {
   index: number;
@@ -133,6 +231,7 @@ export interface CellInfo {
   style: StyleDto;
   merge?: [number, number, number, number];
   arrayAnchor?: [number, number];
+  note?: Note;
 }
 
 export interface SelectionStats {
@@ -173,6 +272,10 @@ export interface Settings {
   userName: string;
   showStartScreen: boolean;
   dayFirst: boolean | null;
+  preserveLiterals: boolean;
+  csvBom: boolean;
+  autorecoverSeconds: number;
+  keepVersions: number;
 }
 
 export interface AppInfo {

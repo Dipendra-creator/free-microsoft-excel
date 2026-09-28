@@ -1,4 +1,5 @@
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -194,6 +195,16 @@ export default function App() {
     return () => unlisten?.();
   }, []);
 
+  // Files opened from the OS while the app runs (Finder / Explorer / Dock)
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    getCurrentWebviewWindow()
+      .listen<string>("open-file", (event) => openPathRef.current(event.payload))
+      .then((u) => (unlisten = u))
+      .catch(() => {});
+    return () => unlisten?.();
+  }, []);
+
   // Tell the backend which workbook this window shows (after startup decided)
   useEffect(() => {
     if (!info) return;
@@ -214,6 +225,7 @@ export default function App() {
             templates,
             current: book,
             newWorkbook,
+            showBook: (wb: WorkbookInfo) => show(wb, false),
             openPath,
             browse,
             ask,
@@ -225,7 +237,7 @@ export default function App() {
             openOptions: () => setOptions(true),
           }
         : null,
-    [info, settings, recent, templates, book, saveSettings, refreshRecent, newWorkbook, openPath, browse, ask, error],
+    [info, settings, recent, templates, book, saveSettings, refreshRecent, newWorkbook, show, openPath, browse, ask, error],
   );
 
   if (fatal) {

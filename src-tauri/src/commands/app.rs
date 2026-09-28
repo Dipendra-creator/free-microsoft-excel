@@ -1,7 +1,9 @@
 //! App-level commands: start screen data, settings, windows.
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_opener::OpenerExt;
 
 use crate::{
@@ -26,8 +28,64 @@ pub struct AppInfo {
     pub day_first: bool,
 }
 
+/// Set once a window asked for `app_info`, i.e. the UI can receive events.
+static FRONTEND_READY: AtomicBool = AtomicBool::new(false);
+
+/// Opens a file in the running app: sent to the focused window (or any
+/// window), or kept as the startup file when no UI is up yet.
+pub fn deliver_open(app: &AppHandle, path: String) {
+    let windows = app.webview_windows();
+    let target = windows
+        .values()
+        .find(|w| w.is_focused().unwrap_or(false))
+        .or_else(|| windows.get("main"))
+        .or_else(|| windows.values().next());
+    match target {
+        Some(w) if FRONTEND_READY.load(Ordering::SeqCst) => {
+            let _ = w.unminimize();
+            let _ = w.set_focus();
+            let _ = app.emit_to(w.label(), "open-file", path);
+        }
+        _ => {
+            if let Some(state) = app.try_state::<AppState>() {
+                *state.startup_file.lock().unwrap() = Some(path);
+            }
+        }
+    }
+}
+
+pub fn focus_any_window(app: &AppHandle) {
+    if let Some(w) = app.webview_windows().values().next() {
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookWindow {
+    pub label: String,
+    pub book: String,
+    pub title: String,
+    pub dirty: bool,
+}
+
+/// Open workbook windows (View > Switch Windows).
+#[tauri::command(async)]
+pub fn list_book_windows(state: State<'_, AppState>) -> AppResult<Vec<BookWindow>> {
+    let mut out = Vec::new();
+    for (label, book) in state.bound_windows() {
+        if let Ok((title, dirty)) = state.read(&book, |s| Ok((s.title.clone(), s.dirty))) {
+            out.push(BookWindow { label, book, title, dirty });
+        }
+    }
+    out.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    Ok(out)
+}
+
 #[tauri::command(async)]
 pub fn app_info(app: AppHandle, state: State<'_, AppState>) -> AppResult<AppInfo> {
+    FRONTEND_READY.store(true, Ordering::SeqCst);
     let settings = state.settings.lock().unwrap().value.clone();
     Ok(AppInfo {
         name: APP_NAME.to_string(),
@@ -47,10 +105,12 @@ pub fn update_settings(state: State<'_, AppState>, settings: Settings) -> AppRes
     store.value = Settings {
         default_font_size: size,
         sheets_in_new_workbook: settings.sheets_in_new_workbook.clamp(1, 255),
+        autorecover_seconds: settings.autorecover_seconds.min(3600),
+        keep_versions: settings.keep_versions.min(200),
         ..settings
     };
     store.save();
-    state.update_prefs(&store.value.default_font, store.value.default_font_size, store.value.day_first);
+    state.update_prefs(&store.value);
     Ok(store.value.clone())
 }
 

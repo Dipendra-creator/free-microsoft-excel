@@ -3,5 +3,6 @@
 
 pub mod app;
 pub mod cells;
+pub mod features;
 pub mod sheet;
 pub mod workbook;

@@ -18,7 +18,7 @@ pub struct OpenResult {
     pub already_open: bool,
 }
 
-fn new_id() -> String {
+pub(crate) fn new_id() -> String {
     uuid::Uuid::new_v4().simple().to_string()
 }
 
@@ -76,6 +76,13 @@ pub fn workbook_info(state: State<'_, AppState>, book: String) -> AppResult<Work
     state.read(&book, |s| Ok(s.info()))
 }
 
+/// Keeps the file's previous content in the version history, then writes.
+fn save_with_history(state: &AppState, s: &Session, location: &Location) -> AppResult<()> {
+    let keep = state.settings.lock().unwrap().value.keep_versions as usize;
+    state.versions.backup(&location.path, keep);
+    state.store.save(s, location, &state.config())
+}
+
 #[tauri::command(async)]
 pub fn workbook_save(state: State<'_, AppState>, book: String) -> AppResult<WorkbookInfo> {
     let info = state.with(&book, |s| {
@@ -83,10 +90,11 @@ pub fn workbook_save(state: State<'_, AppState>, book: String) -> AppResult<Work
             .location
             .clone()
             .ok_or_else(|| AppError::Invalid("NO_LOCATION".into()))?;
-        state.store.save(s, &location)?;
+        save_with_history(&state, s, &location)?;
         s.dirty = false;
         Ok(s.info())
     })?;
+    state.recovery.discard_live(&book);
     if let Some(path) = &info.path {
         state.recent.lock().unwrap().touch(path);
     }
@@ -97,7 +105,7 @@ pub fn workbook_save(state: State<'_, AppState>, book: String) -> AppResult<Work
 pub fn workbook_save_as(state: State<'_, AppState>, book: String, path: String) -> AppResult<WorkbookInfo> {
     let location = Location::from_path(&path)?;
     let info = state.with(&book, |s| {
-        state.store.save(s, &location)?;
+        save_with_history(&state, s, &location)?;
         // Saving as CSV keeps editing the workbook but future saves go to the CSV.
         s.title = location.display_name();
         s.location = Some(location.clone());
@@ -105,6 +113,7 @@ pub fn workbook_save_as(state: State<'_, AppState>, book: String, path: String) 
         s.untouched = false;
         Ok(s.info())
     })?;
+    state.recovery.discard_live(&book);
     state.recent.lock().unwrap().touch(&path);
     Ok(info)
 }
@@ -113,7 +122,7 @@ pub fn workbook_save_as(state: State<'_, AppState>, book: String, path: String) 
 #[tauri::command(async)]
 pub fn workbook_export(state: State<'_, AppState>, book: String, path: String) -> AppResult<()> {
     let location = Location::from_path(&path)?;
-    state.read(&book, |s| state.store.save(s, &location))
+    state.read(&book, |s| state.store.save(s, &location, &state.config()))
 }
 
 #[tauri::command(async)]

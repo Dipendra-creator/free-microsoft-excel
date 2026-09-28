@@ -30,17 +30,18 @@ impl WorkbookStore for FileStore {
                 Ok(Model::from_workbook(workbook, config.language)?)
             }
             FileFormat::Csv | FileFormat::Tsv => {
+                let text = decode_text(&bytes);
                 let delimiter = if location.format == FileFormat::Tsv {
                     b'\t'
                 } else {
-                    sniff_delimiter(&bytes)
+                    sniff_delimiter(&text)
                 };
-                load_delimited(&bytes, delimiter, &name, config)
+                load_delimited(&text, delimiter, &name, config)
             }
         }
     }
 
-    fn save(&self, session: &Session, location: &Location) -> AppResult<()> {
+    fn save(&self, session: &Session, location: &Location, config: &EngineConfig) -> AppResult<()> {
         let data = match location.format {
             FileFormat::Xlsx => {
                 let model = session.export_model()?;
@@ -49,12 +50,15 @@ impl WorkbookStore for FileStore {
             }
             FileFormat::Csv | FileFormat::Tsv => {
                 let sheet = session.info().active_sheet;
-                let values = session.sheet_values(sheet)?;
+                let values = session.sheet_export_values(sheet)?;
                 let delimiter = if location.format == FileFormat::Tsv { b'\t' } else { b',' };
+                // A UTF-8 byte order mark makes Excel read the file as UTF-8
+                // instead of the legacy code page (garbled accents otherwise).
+                let bom: &[u8] = if config.csv_bom { &[0xEF, 0xBB, 0xBF] } else { &[] };
                 let mut writer = csv::WriterBuilder::new()
                     .delimiter(delimiter)
                     .flexible(true)
-                    .from_writer(Vec::new());
+                    .from_writer(bom.to_vec());
                 for row in values {
                     writer
                         .write_record(row)
@@ -69,8 +73,9 @@ impl WorkbookStore for FileStore {
     }
 }
 
-/// Writes to a temporary file first so a failure never corrupts the original.
-fn write_atomic(path: &Path, data: &[u8]) -> AppResult<()> {
+/// Writes to a temporary file first and flushes it to disk before replacing
+/// the original, so a crash or power loss never leaves a half-written file.
+pub fn write_atomic(path: &Path, data: &[u8]) -> AppResult<()> {
     let tmp = path.with_extension(format!(
         "{}.tmp",
         path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default()
@@ -80,6 +85,7 @@ fn write_atomic(path: &Path, data: &[u8]) -> AppResult<()> {
         let mut writer = BufWriter::new(file);
         writer.write_all(data)?;
         writer.flush()?;
+        writer.get_ref().sync_all()?;
     }
     if let Err(e) = fs::rename(&tmp, path) {
         let _ = fs::remove_file(&tmp);
@@ -88,8 +94,25 @@ fn write_atomic(path: &Path, data: &[u8]) -> AppResult<()> {
     Ok(())
 }
 
-fn sniff_delimiter(bytes: &[u8]) -> u8 {
-    let head = String::from_utf8_lossy(&bytes[..bytes.len().min(4096)]);
+/// Decodes text files the way people expect regardless of the program that
+/// wrote them: UTF-8 (with or without BOM), UTF-16 LE/BE (BOM), and the
+/// Windows-1252 legacy encoding when the bytes are not valid UTF-8.
+pub fn decode_text(bytes: &[u8]) -> String {
+    if let Some((encoding, bom_len)) = encoding_rs::Encoding::for_bom(bytes) {
+        let (text, _) = encoding.decode_without_bom_handling(&bytes[bom_len..]);
+        return text.into_owned();
+    }
+    match std::str::from_utf8(bytes) {
+        Ok(s) => s.to_string(),
+        Err(_) => {
+            let (text, _, _) = encoding_rs::WINDOWS_1252.decode(bytes);
+            text.into_owned()
+        }
+    }
+}
+
+fn sniff_delimiter(text: &str) -> u8 {
+    let head: String = text.chars().take(4096).collect();
     let line = head.lines().next().unwrap_or_default();
     let candidates = [b',', b';', b'\t', b'|'];
     candidates
@@ -100,9 +123,8 @@ fn sniff_delimiter(bytes: &[u8]) -> u8 {
         .unwrap_or(b',')
 }
 
-fn load_delimited(bytes: &[u8], delimiter: u8, name: &str, config: &EngineConfig) -> AppResult<Model<'static>> {
-    // Strip UTF-8 BOM
-    let bytes = bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(bytes);
+pub fn load_delimited(text: &str, delimiter: u8, name: &str, config: &EngineConfig) -> AppResult<Model<'static>> {
+    let bytes = text.as_bytes();
     let mut model = config.new_model(name)?;
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(delimiter)
@@ -120,6 +142,10 @@ fn load_delimited(bytes: &[u8], delimiter: u8, name: &str, config: &EngineConfig
                 continue;
             }
             let value = String::from_utf8_lossy(field).to_string();
+            let value = match crate::engine::protect_literal(&value) {
+                Some(p) if config.preserve_literals => p,
+                _ => value,
+            };
             model.set_user_input(0, row, j as i32 + 1, value)?;
         }
     }

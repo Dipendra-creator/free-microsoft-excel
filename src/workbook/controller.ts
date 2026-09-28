@@ -7,6 +7,8 @@ import {
   Kind,
   type CellInfo,
   type CellsChunk,
+  type ChartKind,
+  type ChartSpec,
   type Rect,
   type SelectionStats,
   type SheetLayout,
@@ -103,6 +105,10 @@ export class WorkbookController {
   busy = false;
   lastError: string | null = null;
   ui: UiBridge | null = null;
+  /** Chart selected on the sheet (Delete removes it). */
+  selectedChart: string | null = null;
+  /** Show every note, not just on hover. */
+  showAllNotes = false;
 
   version = 0;
   private stateListeners = new Set<() => void>();
@@ -222,6 +228,11 @@ export class WorkbookController {
     if (layoutChanged) await this.loadLayout();
     this.invalidate();
     this.emit();
+  }
+
+  /** Changes whenever cell data may have changed (charts refetch on it). */
+  get dataStamp() {
+    return this.dataVersion;
   }
 
   /** Marks cached cells stale and refetches everything visible. */
@@ -1511,6 +1522,175 @@ export class WorkbookController {
       this.fail(e);
       return false;
     }
+  }
+
+  // ------------------------------------------------------------------
+  // AutoFilter
+  // ------------------------------------------------------------------
+
+  get filter() {
+    return this.layout?.filter ?? null;
+  }
+
+  /** Column of the filter button at a header cell, if any. */
+  filterButtonAt(r: number, c: number): boolean {
+    const f = this.filter;
+    return !!f && r === f.r1 && c >= f.c1 && c <= f.c2;
+  }
+
+  toggleFilter() {
+    return this.run(api.filterToggle(this.id, this.sheet, this.range));
+  }
+
+  setFilter(col: number, values: string[] | null) {
+    return this.run(api.filterSet(this.id, this.sheet, col, values));
+  }
+
+  clearFilter() {
+    return this.run(api.filterClear(this.id, this.sheet));
+  }
+
+  reapplyFilter() {
+    return this.run(api.filterReapply(this.id, this.sheet));
+  }
+
+  filterSort(col: number, ascending: boolean) {
+    return this.run(api.filterSort(this.id, this.sheet, col, ascending));
+  }
+
+  /** Quick filter from the context menu: keep only the active cell's value. */
+  async filterByActiveValue() {
+    const { r, c } = this.sel.active;
+    if (!this.filter) {
+      if (!(await this.toggleFilter())) return;
+    }
+    const f = this.filter;
+    if (!f || c < f.c1 || c > f.c2 || r <= f.r1) return;
+    const value = this.cache.get(r, c)?.text ?? "";
+    await this.setFilter(c, [value]);
+  }
+
+  // ------------------------------------------------------------------
+  // Notes
+  // ------------------------------------------------------------------
+
+  hasNote(r: number, c: number): boolean {
+    return (this.layout?.notes ?? []).some(([nr, nc]) => nr === r && nc === c);
+  }
+
+  setNote(text: string, r = this.sel.active.r, c = this.sel.active.c) {
+    return this.run(api.setNote(this.id, this.sheet, r, c, text));
+  }
+
+  deleteNotes() {
+    return this.run(api.deleteNotes(this.id, this.sheet, this.usedClamp(this.range)));
+  }
+
+  /** Moves to the next/previous cell with a note. */
+  nextNote(dir: 1 | -1) {
+    const notes = [...(this.layout?.notes ?? [])].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    if (!notes.length) return;
+    const { r, c } = this.sel.active;
+    const idx = notes.findIndex(([nr, nc]) => (dir > 0 ? nr > r || (nr === r && nc > c) : false));
+    let target: [number, number];
+    if (dir > 0) target = notes[idx < 0 ? 0 : idx];
+    else {
+      const before = notes.filter(([nr, nc]) => nr < r || (nr === r && nc < c));
+      target = before.length ? before[before.length - 1] : notes[notes.length - 1];
+    }
+    this.select(target[0], target[1]);
+  }
+
+  // ------------------------------------------------------------------
+  // Charts
+  // ------------------------------------------------------------------
+
+  get charts(): ChartSpec[] {
+    return this.layout?.charts ?? [];
+  }
+
+  async insertChart(kind: ChartKind) {
+    let source = this.range;
+    if (source.r1 === source.r2 && source.c1 === source.c2) {
+      source = await api.currentRegion(this.id, this.sheet, source.r1, source.c1);
+    }
+    source = this.usedClamp(source);
+    if (source.r1 === source.r2 && source.c1 === source.c2 && !this.cache.get(source.r1, source.c1)?.text) {
+      this.ui?.error("Select the data you want to chart (for example a table with headers), then choose a chart type.");
+      return;
+    }
+    const anchorCol = Math.min(LAST_COL, source.c2 + 2);
+    const chart: ChartSpec = {
+      id: "",
+      kind,
+      range: source,
+      title: "",
+      seriesInRows: false,
+      legend: true,
+      row: source.r1,
+      col: anchorCol,
+      dx: 0,
+      dy: 0,
+      width: 480,
+      height: 288,
+    };
+    try {
+      const [id, info] = await api.saveChart(this.id, this.sheet, chart);
+      await this.setInfo(info);
+      this.selectedChart = id;
+      this.ensureVisible(chart.row, chart.col);
+      this.emit();
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  async saveChart(chart: ChartSpec) {
+    try {
+      const [, info] = await api.saveChart(this.id, this.sheet, chart);
+      await this.setInfo(info);
+    } catch (e) {
+      this.fail(e);
+    }
+  }
+
+  async deleteChart(id = this.selectedChart) {
+    if (!id) return;
+    this.selectedChart = null;
+    await this.run(api.deleteChart(this.id, this.sheet, id));
+  }
+
+  selectChart(id: string | null) {
+    if (this.selectedChart === id) return;
+    this.selectedChart = id;
+    this.emit();
+  }
+
+  // ------------------------------------------------------------------
+  // Data tools
+  // ------------------------------------------------------------------
+
+  /** Selection for tools that work on a data table (current region if one cell). */
+  async dataRange(): Promise<Rect> {
+    let target = this.range;
+    if (target.r1 === target.r2 && target.c1 === target.c2) {
+      target = await api.currentRegion(this.id, this.sheet, target.r1, target.c1);
+    }
+    return this.usedClamp(target);
+  }
+
+  /** Opens a URL typed in the active cell (Ctrl+click / Open Hyperlink). */
+  async openLink(r = this.sel.active.r, c = this.sel.active.c): Promise<boolean> {
+    const text = (this.cache.get(r, c)?.text ?? "").trim();
+    const url = /^(https?:\/\/|mailto:)\S+$/i.test(text) ? text : /^www\.\S+\.\S+$/i.test(text) ? `https://${text}` : null;
+    if (!url) return false;
+    try {
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
+    } catch (e) {
+      this.fail(e);
+    }
+    return true;
   }
 
   nameBoxText(): string {

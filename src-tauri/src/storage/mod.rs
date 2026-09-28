@@ -15,7 +15,7 @@ use crate::{
     error::{AppError, AppResult},
 };
 
-pub use file::FileStore;
+pub use file::{write_atomic, FileStore};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FileFormat {
@@ -84,5 +84,5 @@ pub trait WorkbookStore: Send + Sync {
     /// Loads a model from a location.
     fn load(&self, location: &Location, config: &EngineConfig) -> AppResult<Model<'static>>;
     /// Persists the session at a location.
-    fn save(&self, session: &Session, location: &Location) -> AppResult<()>;
+    fn save(&self, session: &Session, location: &Location, config: &EngineConfig) -> AppResult<()>;
 }

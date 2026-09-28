@@ -15,6 +15,18 @@ export function handleGridKey(ctl: WorkbookController, e: KeyboardEvent): boolea
   const shift = e.shiftKey;
   const key = e.key;
 
+  // A selected chart takes Delete / Escape
+  if (ctl.selectedChart) {
+    if (key === "Delete" || key === "Backspace") {
+      ctl.deleteChart();
+      return true;
+    }
+    if (key === "Escape") {
+      ctl.selectChart(null);
+      return true;
+    }
+  }
+
   if (ctrl && !e.altKey) {
     switch (key.toLowerCase()) {
       case "arrowup":
@@ -160,9 +172,13 @@ export function handleGridKey(ctl: WorkbookController, e: KeyboardEvent): boolea
         ui?.dialog("print");
         return true;
       case "k":
+        ui?.dialog("link");
+        return true;
+      case "l":
+        if (shift) ctl.toggleFilter();
+        else ctl.formatAsTable();
         return true;
       case "t":
-      case "l":
         ctl.formatAsTable();
         return true;
       case "c":
@@ -177,6 +193,10 @@ export function handleGridKey(ctl: WorkbookController, e: KeyboardEvent): boolea
   if (e.altKey && !ctrl) {
     if (key === "=") {
       ctl.autoSum();
+      return true;
+    }
+    if (key === "F1") {
+      ctl.insertChart("column");
       return true;
     }
     if (key === "PageDown") {
@@ -233,7 +253,8 @@ export function handleGridKey(ctl: WorkbookController, e: KeyboardEvent): boolea
       ctl.startEdit("enter", "");
       return true;
     case "F2":
-      ctl.startEdit("edit");
+      if (shift) ui?.dialog("note");
+      else ctl.startEdit("edit");
       return true;
     case "F4":
       return true;

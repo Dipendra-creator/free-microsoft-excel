@@ -1,0 +1,434 @@
+/* Charts, AutoFilter menu, notes, health check, Text to Columns, recovery,
+   and print output. */
+
+/* ---------- Charts ---------- */
+.chart-layer {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+.chart-box {
+  position: absolute;
+  pointer-events: auto;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: move;
+}
+.chart-box.selected {
+  border-color: #8a8a8a;
+  outline: 1px solid #8a8a8a;
+}
+.chart-inner {
+  transform-origin: 0 0;
+  overflow: hidden;
+}
+.chart-loading {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+}
+.chart-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border: 1px solid #6b6b6b;
+  border-radius: 50%;
+}
+.chart-handle.h-nw { left: -5px; top: -5px; cursor: nwse-resize; }
+.chart-handle.h-n { left: calc(50% - 4px); top: -5px; cursor: ns-resize; }
+.chart-handle.h-ne { right: -5px; top: -5px; cursor: nesw-resize; }
+.chart-handle.h-e { right: -5px; top: calc(50% - 4px); cursor: ew-resize; }
+.chart-handle.h-se { right: -5px; bottom: -5px; cursor: nwse-resize; }
+.chart-handle.h-s { left: calc(50% - 4px); bottom: -5px; cursor: ns-resize; }
+.chart-handle.h-sw { left: -5px; bottom: -5px; cursor: nesw-resize; }
+.chart-handle.h-w { left: -5px; top: calc(50% - 4px); cursor: ew-resize; }
+.chart-menu-btn {
+  position: absolute;
+  top: 4px;
+  right: -30px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #c8c8c8;
+  background: #fff;
+  color: #333;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.chart-menu-btn:hover {
+  background: #f0f0f0;
+}
+
+/* ---------- AutoFilter menu ---------- */
+.filter-menu {
+  width: 260px;
+  padding: 4px 0 8px;
+}
+.fm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 12px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.fm-item:hover:not(:disabled) {
+  background: var(--menu-hover);
+}
+.fm-item:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+.fm-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 10px;
+  padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--input-bg);
+  border-radius: 3px;
+}
+.fm-search input {
+  flex: 1;
+  border: 0;
+  background: none;
+  color: var(--text);
+  outline: none;
+  font: inherit;
+}
+.fm-list {
+  margin: 0 10px;
+  height: 200px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  padding: 2px 0;
+}
+.fm-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fm-check:hover {
+  background: var(--hover);
+}
+.fm-check.all {
+  font-weight: 600;
+}
+.fm-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fm-count {
+  color: var(--text-3);
+  font-size: 11px;
+}
+.fm-loading,
+.fm-more {
+  padding: 6px;
+  color: var(--text-3);
+  font-size: 12px;
+  white-space: normal;
+}
+.fm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 8px 10px 0;
+}
+
+/* ---------- Notes ---------- */
+.notes-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.note-box {
+  position: absolute;
+  width: 200px;
+  max-height: 180px;
+  overflow: hidden;
+  padding: 5px 7px;
+  background: #ffffe1;
+  color: #1a1a1a;
+  border: 1px solid #8a8a5a;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+  font: 12px/1.35 Tahoma, "Segoe UI", system-ui, sans-serif;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.note-author {
+  font-weight: bold;
+}
+.note-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  resize: vertical;
+  background: #ffffe1;
+  color: #1a1a1a;
+  border: 1px solid var(--border-strong);
+  padding: 6px;
+  font: 13px/1.4 Tahoma, "Segoe UI", system-ui, sans-serif;
+}
+
+/* ---------- Text to Columns ---------- */
+.ttc-options {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+}
+.ttc-options fieldset {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  margin: 0;
+}
+.ttc-options legend {
+  padding: 0 4px;
+  color: var(--text-2);
+}
+input.tiny {
+  width: 28px;
+  text-align: center;
+}
+.ttc-preview {
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+.ttc-preview table {
+  border-collapse: collapse;
+  font: 12px Consolas, "Cascadia Mono", monospace;
+  color: #111;
+}
+.ttc-preview td {
+  border-right: 1px solid #d4d4d4;
+  border-bottom: 1px solid #ececec;
+  padding: 2px 8px;
+  white-space: pre;
+}
+
+/* ---------- Health check ---------- */
+.health-loading {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-3);
+}
+.health-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.hs-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+}
+.hs-card.ok .icon {
+  color: var(--accent);
+}
+.hs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+.hs-chip.active {
+  border-color: var(--accent);
+}
+.hs-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: #9d9d9d;
+}
+.error > .hs-dot {
+  background: #e0463c;
+}
+.warning > .hs-dot {
+  background: #f2a530;
+}
+.info > .hs-dot {
+  background: #3b8eea;
+}
+.health-list {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+}
+.hl-group + .hl-group {
+  border-top: 1px solid var(--border);
+}
+.hl-title {
+  padding: 6px 10px;
+  font-weight: 600;
+  background: var(--surface-2);
+  position: sticky;
+  top: 0;
+}
+.hl-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 10px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.hl-item:hover:not(:disabled) {
+  background: var(--hover);
+}
+.hl-item:disabled {
+  cursor: default;
+}
+.hl-ref {
+  flex: none;
+  min-width: 110px;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  color: var(--accent-text);
+}
+.hl-msg {
+  flex: 1;
+}
+
+/* ---------- Recovery / versions ---------- */
+.recovery-panel {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #b36b00;
+  border-left-width: 4px;
+  background: rgba(242, 165, 48, 0.08);
+  border-radius: 4px;
+}
+.recovery-panel h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.recovery-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--divider);
+}
+.recovery-row:first-of-type {
+  border-top: 0;
+}
+.recovery-row .rr-name {
+  flex: 1;
+  min-width: 0;
+}
+.recovery-row .rr-name b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.version-list {
+  max-width: 640px;
+}
+.print-options {
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+}
+.print-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.print-options select {
+  min-width: 220px;
+}
+
+/* ---------- Print ---------- */
+#print-root {
+  display: none;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+    color: #000;
+    font-family: "Aptos Narrow", Aptos, Calibri, "Segoe UI", sans-serif;
+  }
+}
+.print-sheet {
+  page-break-after: always;
+  break-after: page;
+}
+.print-sheet:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+.print-body {
+  position: relative;
+}
+.print-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11pt;
+}
+.print-table td {
+  padding: 0 3px;
+  overflow: visible;
+  line-height: 1.15;
+}
+.print-grid td {
+  border: 1px solid #d4d4d4;
+}
+.print-table th {
+  background: #f0f0f0;
+  border: 1px solid #c8c8c8;
+  font-weight: normal;
+  font-size: 9pt;
+  color: #444;
+}
+.print-chart {
+  position: absolute;
+  border: 1px solid #d0d0d0;
+}
+.print-note {
+  font-size: 9pt;
+  color: #666;
+}

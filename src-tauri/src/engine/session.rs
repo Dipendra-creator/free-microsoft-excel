@@ -18,13 +18,19 @@ use serde_json::json;
 use super::{
     a1::{parse_range, Rect, LAST_COLUMN, LAST_ROW},
     dto::*,
+    extras::{Extras, Note},
     merges::MergeStore,
+    meta,
     styling::{apply_patch, change_decimals, Edges},
 };
 use crate::{
     error::{AppError, AppResult},
     storage::Location,
 };
+
+mod features;
+
+pub use features::{FilterValue, HealthReport, PivotSpec, SplitOptions};
 
 pub type Engine = UserModel<'static>;
 
@@ -38,6 +44,10 @@ pub struct EngineConfig {
     pub font_size: i32,
     /// Interpret 01/02/2026 as 1 February (true) or January 2 (false).
     pub day_first: bool,
+    /// Keep "00501" / 16+ digit numbers as text (typing, paste, CSV import).
+    pub preserve_literals: bool,
+    /// Write a UTF-8 byte order mark in CSV/TXT files (Excel compatibility).
+    pub csv_bom: bool,
 }
 
 impl EngineConfig {
@@ -56,14 +66,14 @@ impl EngineConfig {
 #[derive(Default, Debug)]
 struct HistoryEntry {
     engine_steps: u32,
-    merges_before: Option<MergeStore>,
-    merges_after: Option<MergeStore>,
+    extras_before: Option<Extras>,
+    extras_after: Option<Extras>,
 }
 
 /// Accumulates the engine operations of one user action.
 struct Tx {
     steps: u32,
-    merges_before: Option<MergeStore>,
+    extras_before: Option<Extras>,
     layout: bool,
 }
 
@@ -134,7 +144,8 @@ pub struct Session {
     pub title: String,
     pub location: Option<Location>,
     model: Engine,
-    merges: MergeStore,
+    /// Merges, notes, charts and filters (see [`Extras`]).
+    x: Extras,
     undo_stack: Vec<HistoryEntry>,
     redo_stack: Vec<HistoryEntry>,
     pub dirty: bool,
@@ -142,6 +153,10 @@ pub struct Session {
     pub untouched: bool,
     layout_version: u64,
     default_font: DefaultFont,
+    /// Bumped on every change (edit, undo, redo); used by AutoRecover.
+    pub edit_seq: u64,
+    /// Keep leading-zero and >15-digit numbers as text (see `input::protect_literal`).
+    pub preserve_literals: bool,
 }
 
 fn area(sheet: u32, r: &Rect) -> Area {
@@ -190,7 +205,8 @@ impl Session {
                 left_column: 1,
             });
         }
-        let merges = MergeStore::from_workbook(&model.workbook);
+        let meta = meta::extract(&mut model);
+        let x = build_extras(&model, meta);
         let default_font = {
             let styles = &model.workbook.styles;
             let font_id = styles
@@ -219,13 +235,15 @@ impl Session {
             title,
             location,
             model,
-            merges,
+            x,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             dirty: false,
             untouched: false,
             layout_version: 1,
             default_font,
+            edit_seq: 0,
+            preserve_literals: true,
         }
     }
 
@@ -240,7 +258,7 @@ impl Session {
     ) -> AppResult<T> {
         let mut tx = Tx {
             steps: 0,
-            merges_before: None,
+            extras_before: None,
             layout,
         };
         let result = f(self, &mut tx);
@@ -268,35 +286,37 @@ impl Session {
         Ok(())
     }
 
-    fn snapshot_merges(&self, tx: &mut Tx) {
-        if tx.merges_before.is_none() {
-            tx.merges_before = Some(self.merges.clone());
+    /// Records the extras state before the first change of a transaction.
+    fn snapshot(&self, tx: &mut Tx) {
+        if tx.extras_before.is_none() {
+            tx.extras_before = Some(self.x.clone());
         }
     }
 
     fn commit(&mut self, tx: Tx) {
-        let merges_changed = tx
-            .merges_before
+        let extras_changed = tx
+            .extras_before
             .as_ref()
-            .map(|before| before != &self.merges)
+            .map(|before| before != &self.x)
             .unwrap_or(false);
-        if tx.steps == 0 && !merges_changed {
+        if tx.steps == 0 && !extras_changed {
             return;
         }
-        let (before, after) = if merges_changed {
-            (tx.merges_before, Some(self.merges.clone()))
+        let (before, after) = if extras_changed {
+            (tx.extras_before, Some(self.x.clone()))
         } else {
             (None, None)
         };
         self.undo_stack.push(HistoryEntry {
             engine_steps: tx.steps,
-            merges_before: before,
-            merges_after: after,
+            extras_before: before,
+            extras_after: after,
         });
         self.redo_stack.clear();
         self.dirty = true;
         self.untouched = false;
-        if tx.layout || merges_changed {
+        self.edit_seq += 1;
+        if tx.layout || extras_changed {
             self.layout_version += 1;
         }
     }
@@ -323,11 +343,12 @@ impl Session {
         }
         self.model.resume_evaluation();
         self.model.evaluate();
-        if let Some(before) = &entry.merges_before {
-            self.merges = before.clone();
+        if let Some(before) = &entry.extras_before {
+            self.x = before.clone();
         }
         self.redo_stack.push(entry);
         self.dirty = true;
+        self.edit_seq += 1;
         self.layout_version += 1;
         result
     }
@@ -346,11 +367,12 @@ impl Session {
         }
         self.model.resume_evaluation();
         self.model.evaluate();
-        if let Some(after) = &entry.merges_after {
-            self.merges = after.clone();
+        if let Some(after) = &entry.extras_after {
+            self.x = after.clone();
         }
         self.undo_stack.push(entry);
         self.dirty = true;
+        self.edit_seq += 1;
         self.layout_version += 1;
         result
     }
@@ -366,6 +388,7 @@ impl Session {
     pub fn apply_remote_diffs(&mut self, diffs: &[u8]) -> AppResult<()> {
         self.model.apply_external_diffs(diffs)?;
         self.layout_version += 1;
+        self.edit_seq += 1;
         Ok(())
     }
 
@@ -496,6 +519,7 @@ impl Session {
             rows,
             cols,
             merges: self
+                .x
                 .merges
                 .get(ws.sheet_id)
                 .iter()
@@ -509,6 +533,15 @@ impl Session {
             row_styles,
             col_styles,
             styles,
+            notes: self.x.notes(ws.sheet_id).iter().map(|n| [n.row, n.col]).collect(),
+            filter: self.x.filters.get(&ws.sheet_id).map(|f| FilterDto {
+                r1: f.range.r1,
+                c1: f.range.c1,
+                r2: f.range.r2,
+                c2: f.range.c2,
+                active: f.columns.keys().copied().collect(),
+            }),
+            charts: self.x.charts(ws.sheet_id).to_vec(),
         })
     }
 
@@ -696,8 +729,9 @@ impl Session {
             formatted: model.get_formatted_cell_value(sheet, row, col).unwrap_or_default(),
             kind: k,
             style: self.style_dto(&style),
-            merge: self.merges.find(sheet_id, row, col).map(|r| r.to_array()),
+            merge: self.x.merges.find(sheet_id, row, col).map(|r| r.to_array()),
             array_anchor,
+            note: self.x.note(sheet_id, row, col).cloned(),
         })
     }
 
@@ -796,7 +830,7 @@ impl Session {
             }
             s.cells_with_data += cells;
             s.formulas += formulas;
-            s.merged_ranges += self.merges.get(ws.sheet_id).len();
+            s.merged_ranges += self.x.merges.get(ws.sheet_id).len();
             if i == active {
                 s.active_sheet_cells = cells;
                 s.active_sheet_formulas = formulas;
@@ -841,9 +875,21 @@ impl Session {
     // Cell input
     // ------------------------------------------------------------------
 
+    /// Input as it should reach the engine (protected literals get a quote prefix).
+    fn engine_input<'a>(&self, input: &'a str) -> std::borrow::Cow<'a, str> {
+        if self.preserve_literals {
+            if let Some(p) = super::input::protect_literal(input) {
+                return p.into();
+            }
+        }
+        input.into()
+    }
+
     pub fn set_input(&mut self, sheet: u32, row: i32, col: i32, input: &str, day_first: bool) -> AppResult<()> {
         self.check_sheet(sheet)?;
         let before = self.model.get_row_height(sheet, row)?;
+        let protected = self.engine_input(input).into_owned();
+        let input = protected.as_str();
         let parsed = super::input::interpret(input, day_first);
         self.tx(false, |s, tx| {
             match &parsed {
@@ -872,6 +918,8 @@ impl Session {
     /// (formulas are shifted relative to the first cell like Excel does).
     pub fn set_range_input(&mut self, sheet: u32, rect: Rect, input: &str, day_first: bool) -> AppResult<()> {
         self.check_sheet(sheet)?;
+        let protected = self.engine_input(input).into_owned();
+        let input = protected.as_str();
         let parsed = super::input::interpret(input, day_first);
         let input = parsed.as_ref().map(|p| p.value.as_str()).unwrap_or(input);
         let (max_row, max_col) = (rect.r1 + 9_999, rect.c1 + 999);
@@ -922,8 +970,9 @@ impl Session {
                         let r = s.model.range_clear_formatting(&area(sheet, &rect));
                         Self::step(tx, r)?;
                     }
-                    s.snapshot_merges(tx);
-                    s.merges.remove_intersecting(sheet_id, &rect);
+                    s.snapshot(tx);
+                    s.x.merges.remove_intersecting(sheet_id, &rect);
+                    s.x.remove_notes_in(sheet_id, &rect);
                 }
             }
             Ok(())
@@ -1094,10 +1143,10 @@ impl Session {
             }
         }
         self.tx(true, |s, tx| {
-            s.snapshot_merges(tx);
+            s.snapshot(tx);
             match mode {
                 "unmerge" => {
-                    s.merges.remove_intersecting(sheet_id, &rect);
+                    s.x.merges.remove_intersecting(sheet_id, &rect);
                 }
                 "across" => {
                     for row in rect.r1..=rect.r2 {
@@ -1159,7 +1208,7 @@ impl Session {
                 Self::step(tx, r)?;
             }
         }
-        self.merges.add(sheet_id, rect);
+        self.x.merges.add(sheet_id, rect);
         Ok(())
     }
 
@@ -1172,8 +1221,8 @@ impl Session {
         self.tx(true, |s, tx| {
             let r = s.model.insert_rows(sheet, at, count);
             Self::step(tx, r)?;
-            s.snapshot_merges(tx);
-            s.merges.insert_rows(sheet_id, at, count);
+            s.snapshot(tx);
+            s.x.insert_rows(sheet_id, at, count);
             Ok(())
         })
     }
@@ -1183,8 +1232,8 @@ impl Session {
         self.tx(true, |s, tx| {
             let r = s.model.delete_rows(sheet, at, count);
             Self::step(tx, r)?;
-            s.snapshot_merges(tx);
-            s.merges.delete_rows(sheet_id, at, count);
+            s.snapshot(tx);
+            s.x.delete_rows(sheet_id, at, count);
             Ok(())
         })
     }
@@ -1194,8 +1243,8 @@ impl Session {
         self.tx(true, |s, tx| {
             let r = s.model.insert_columns(sheet, at, count);
             Self::step(tx, r)?;
-            s.snapshot_merges(tx);
-            s.merges.insert_columns(sheet_id, at, count);
+            s.snapshot(tx);
+            s.x.insert_columns(sheet_id, at, count);
             Ok(())
         })
     }
@@ -1205,8 +1254,8 @@ impl Session {
         self.tx(true, |s, tx| {
             let r = s.model.delete_columns(sheet, at, count);
             Self::step(tx, r)?;
-            s.snapshot_merges(tx);
-            s.merges.delete_columns(sheet_id, at, count);
+            s.snapshot(tx);
+            s.x.delete_columns(sheet_id, at, count);
             Ok(())
         })
     }
@@ -1345,8 +1394,8 @@ impl Session {
         self.tx(true, |s, tx| {
             let r = s.model.delete_sheet(sheet);
             Self::step(tx, r)?;
-            s.snapshot_merges(tx);
-            s.merges.remove_sheet(sheet_id);
+            s.snapshot(tx);
+            s.x.remove_sheet(sheet_id);
             Ok(())
         })
     }
@@ -1388,8 +1437,8 @@ impl Session {
             Self::step(tx, r)?;
             let index = s.model.get_selected_sheet();
             let new_id = s.sheet_id(index)?;
-            s.snapshot_merges(tx);
-            s.merges.copy_sheet(from_id, new_id);
+            s.snapshot(tx);
+            s.x.copy_sheet(from_id, new_id);
             Ok(index)
         })
     }
@@ -1600,11 +1649,10 @@ impl Session {
         if text.is_empty() {
             return Ok(Rect::cell(target.r1, target.c1));
         }
-        let rows = text.split('\n').count() as i32;
-        let cols = text.split('\n').map(|l| l.split('\t').count()).max().unwrap_or(1) as i32;
+        let (text, rows, cols) = normalize_tsv(text, self.preserve_literals);
         self.select(sheet, &Rect::cell(target.r1, target.c1))?;
         self.tx(true, |s, tx| {
-            let r = s.model.paste_csv_string(&area(sheet, &Rect::cell(target.r1, target.c1)), text);
+            let r = s.model.paste_csv_string(&area(sheet, &Rect::cell(target.r1, target.c1)), &text);
             Self::step(tx, r)
         })?;
         Ok(Rect::new(target.r1, target.c1, target.r1 + rows - 1, target.c1 + cols - 1))
@@ -2154,7 +2202,9 @@ impl Session {
     pub fn export_model(&self) -> AppResult<Model<'static>> {
         let bytes = self.model.to_bytes();
         let mut model = Model::from_bytes(&bytes, "en")?;
-        self.merges.write_into(&mut model.workbook);
+        self.x.merges.write_into(&mut model.workbook);
+        let sheets = meta::collect(&model, &self.x);
+        meta::inject(&mut model, sheets)?;
         let default = self.default_font.clone();
         for font in model.workbook.styles.fonts.iter_mut() {
             if super::dto::is_engine_default_font(&font.name, font.sz) {
@@ -2166,7 +2216,41 @@ impl Session {
         Ok(model)
     }
 
-    /// Displayed values of a sheet (for CSV export).
+    /// Values of a sheet for CSV/TXT export. Unlike Excel, numbers are never
+    /// truncated to their display format: the displayed text is used only when
+    /// it reads back as exactly the same value (or for dates/times).
+    pub fn sheet_export_values(&self, sheet: u32) -> AppResult<Vec<Vec<String>>> {
+        let model = self.m();
+        let ws = model.workbook.worksheet(sheet)?;
+        if ws.sheet_data.is_empty() {
+            return Ok(vec![]);
+        }
+        let dim = ws.dimension();
+        let mut out = Vec::with_capacity(dim.max_row as usize);
+        for row in 1..=dim.max_row {
+            let mut line = Vec::with_capacity(dim.max_column as usize);
+            for col in 1..=dim.max_column {
+                let shown = model.get_formatted_cell_value(sheet, row, col).unwrap_or_default();
+                let text = match model.get_cell_value_by_index(sheet, row, col) {
+                    Ok(CellValue::Number(n)) => {
+                        let fmt = model.get_style_for_cell(sheet, row, col).map(|st| st.num_fmt).unwrap_or_default();
+                        if is_date_format(&fmt) || reads_back_as(&shown, n) {
+                            shown
+                        } else {
+                            format_number_input(n)
+                        }
+                    }
+                    _ => shown,
+                };
+                line.push(text);
+            }
+            out.push(line);
+        }
+        Ok(out)
+    }
+
+    /// Displayed values of a sheet.
+    #[allow(dead_code)]
     pub fn sheet_values(&self, sheet: u32) -> AppResult<Vec<Vec<String>>> {
         let model = self.m();
         let ws = model.workbook.worksheet(sheet)?;
@@ -2210,6 +2294,49 @@ pub fn format_preview(value: f64, fmt: &str) -> String {
     }
 }
 
+/// True for number formats that display dates or times.
+fn is_date_format(fmt: &str) -> bool {
+    let mut in_quote = false;
+    let mut in_bracket = false;
+    for ch in fmt.chars() {
+        match ch {
+            '"' => in_quote = !in_quote,
+            '[' if !in_quote => in_bracket = true,
+            ']' if !in_quote => in_bracket = false,
+            _ if in_quote || in_bracket => {}
+            'd' | 'D' | 'm' | 'M' | 'y' | 'Y' | 'h' | 'H' | 's' | 'S' => {
+                return !fmt.eq_ignore_ascii_case("general");
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+/// True when a displayed number (e.g. "$1,200.00", "12%") parses back to `value`.
+fn reads_back_as(shown: &str, value: f64) -> bool {
+    let mut t: String = shown
+        .chars()
+        .filter(|c| !matches!(c, ',' | ' ' | '$' | '€' | '£' | '¥' | '₹' | '\u{a0}'))
+        .collect();
+    let mut scale = 1.0;
+    if t.ends_with('%') {
+        t.pop();
+        scale = 0.01;
+    }
+    let negative = t.starts_with('(') && t.ends_with(')');
+    if negative {
+        t = t[1..t.len() - 1].to_string();
+    }
+    match t.parse::<f64>() {
+        Ok(v) => {
+            let v = if negative { -v } else { v } * scale;
+            v == value || ((v - value).abs() <= f64::EPSILON * value.abs().max(1.0) * 4.0)
+        }
+        Err(_) => false,
+    }
+}
+
 fn format_number_input(n: f64) -> String {
     if n.fract() == 0.0 && n.abs() < 1e15 {
         format!("{}", n as i64)
@@ -2226,4 +2353,83 @@ fn looks_like_input(s: &str) -> bool {
         || t.eq_ignore_ascii_case("true")
         || t.eq_ignore_ascii_case("false")
         || t.ends_with('%') && t[..t.len() - 1].trim().parse::<f64>().is_ok()
+}
+
+/// Merges from the workbook, notes from Excel comments, and everything the
+/// metadata sheet stored (which wins over the plain Excel comments).
+fn build_extras(model: &Model, mut meta: HashMap<String, meta::SheetMeta>) -> Extras {
+    let mut x = Extras {
+        merges: MergeStore::from_workbook(&model.workbook),
+        ..Default::default()
+    };
+    for ws in &model.workbook.worksheets {
+        for c in &ws.comments {
+            if let Some(r) = parse_range(&c.cell_ref) {
+                x.set_note(
+                    ws.sheet_id,
+                    Note { row: r.r1, col: r.c1, author: c.author_name.clone(), text: c.text.clone() },
+                );
+            }
+        }
+        if let Some(m) = meta.remove(&ws.name) {
+            for n in m.notes {
+                x.set_note(ws.sheet_id, n);
+            }
+            for c in m.charts {
+                x.upsert_chart(ws.sheet_id, c);
+            }
+            if let Some(f) = m.filter {
+                x.filters.insert(ws.sheet_id, f);
+            }
+        }
+    }
+    x
+}
+
+/// Re-encodes pasted tab separated text so that every row has the same number
+/// of fields (the engine's reader silently skips rows of a different width)
+/// and, optionally, protects literals such as "00501". Returns (text, rows, cols).
+fn normalize_tsv(text: &str, protect: bool) -> (String, i32, i32) {
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .has_headers(false)
+        .flexible(true)
+        .quoting(true)
+        .from_reader(text.as_bytes());
+    let mut records: Vec<Vec<String>> = Vec::new();
+    for record in reader.records() {
+        match record {
+            Ok(r) => records.push(r.iter().map(|f| f.to_string()).collect()),
+            // Malformed quoting: fall back to a plain split of the remaining text
+            Err(_) => return plain_tsv(text, protect),
+        }
+    }
+    finish_tsv(records, protect)
+}
+
+fn plain_tsv(text: &str, protect: bool) -> (String, i32, i32) {
+    let records = text.split('\n').map(|l| l.split('\t').map(|f| f.to_string()).collect()).collect();
+    finish_tsv(records, protect)
+}
+
+fn finish_tsv(mut records: Vec<Vec<String>>, protect: bool) -> (String, i32, i32) {
+    let width = records.iter().map(|r| r.len()).max().unwrap_or(1).max(1);
+    let mut writer = csv::WriterBuilder::new()
+        .delimiter(b'\t')
+        .quote_style(csv::QuoteStyle::Necessary)
+        .from_writer(Vec::new());
+    for r in records.iter_mut() {
+        r.resize(width, String::new());
+        if protect {
+            for f in r.iter_mut() {
+                if let Some(p) = super::input::protect_literal(f) {
+                    *f = p;
+                }
+            }
+        }
+        let _ = writer.write_record(r.iter());
+    }
+    let bytes = writer.into_inner().unwrap_or_default();
+    let out = String::from_utf8(bytes).unwrap_or_default();
+    (out.trim_end_matches('\n').to_string(), records.len().max(1) as i32, width as i32)
 }
