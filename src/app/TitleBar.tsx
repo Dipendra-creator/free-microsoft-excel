@@ -131,9 +131,12 @@ export function CommandSearch({ commands, onFind }: { commands: () => SearchComm
             e.preventDefault();
             setIndex((index - 1 + items.length) % Math.max(1, items.length));
           } else if (e.key === "Enter") {
+            // Cancel the keystroke and run after it: otherwise the rest of this
+            // Enter reaches (and submits) a dialog the command opens.
+            e.preventDefault();
             const item = items[index];
             close();
-            item?.run();
+            if (item) window.setTimeout(() => item.run(), 0);
           } else if (e.key === "Escape") close();
         }}
       />
