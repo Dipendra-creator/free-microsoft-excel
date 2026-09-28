@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, errorMessage, type RecoveryItem, type VersionItem, type WorkbookStats } from "../api";
 import { APP_NAME, useApp } from "../app/context";
+import { updates, useUpdateStatus } from "../app/updates";
 import { Icon } from "../components/Icon";
 import { friendlyDate, greeting } from "../lib/formats";
 import type { WorkbookController } from "../workbook/controller";
@@ -20,13 +21,18 @@ function fileSize(bytes: number): string {
 function RecoveryPanel({ kind, title, text }: { kind: "crashed" | "unsaved"; title: string; text: string }) {
   const app = useApp();
   const [items, setItems] = useState<RecoveryItem[]>([]);
+  // Workbooks kept while Sheets restarted into an update join the crash list
+  const matches = (i: RecoveryItem) => i.kind === kind || (kind === "crashed" && i.kind === "updated");
   useEffect(() => {
     api
       .recoveryList()
-      .then((list) => setItems(list.filter((i) => i.kind === kind)))
+      .then((list) => setItems(list.filter(matches)))
       .catch(() => {});
   }, [kind]);
   if (!items.length) return kind === "unsaved" ? <div className="recent-empty">No unsaved workbooks from the last 7 days.</div> : null;
+  if (kind === "crashed" && items.every((i) => i.kind === "updated")) {
+    text = "Sheets restarted to install an update. These workbooks had unsaved changes: open them to continue where you left off, then save them.";
+  }
   return (
     <div className="recovery-panel">
       <h2>
@@ -66,7 +72,7 @@ function RecoveryPanel({ kind, title, text }: { kind: "crashed" | "unsaved"; tit
               ]);
               if (answer !== "delete") return;
               const list = await api.recoveryDiscard(item.file);
-              setItems(list.filter((i) => i.kind === kind));
+              setItems(list.filter(matches));
             }}
           >
             Discard
@@ -441,11 +447,62 @@ function AccountPage() {
               <div className="muted small">Spreadsheet engine: IronCalc · Shell: Tauri 2</div>
             </div>
           </div>
+          <UpdateOptions />
           <h2 className="bs-subtitle">Connected services</h2>
           <p className="muted">Database sync is not configured. Workbooks are stored as local files.</p>
         </div>
       </div>
     </div>
+  );
+}
+
+/** Account → Update Options, like Office's. */
+function UpdateOptions() {
+  const app = useApp();
+  const status = useUpdateStatus();
+  const [checking, setChecking] = useState(false);
+  const checked = status?.checkedAt ? `Last checked ${friendlyDate(status.checkedAt)}.` : "";
+  const line =
+    status?.phase === "available" || status?.phase === "downloading" || status?.phase === "ready"
+      ? `Version ${status.version} is available — use the button in the title bar.`
+      : status?.phase === "upToDate"
+        ? `You're up to date. ${checked}`
+        : status?.phase === "checking"
+          ? "Checking for updates…"
+          : status?.phase === "error"
+            ? (status.error ?? "Couldn't check for updates.")
+            : app.settings.checkUpdates
+              ? "Updates are checked automatically."
+              : "Automatic update checks are off.";
+  return (
+    <>
+      <h2 className="bs-subtitle">{APP_NAME} Updates</h2>
+      <p className="muted small">{line}</p>
+      <div className="update-options">
+        <button
+          className="btn"
+          disabled={checking}
+          onClick={async () => {
+            setChecking(true);
+            try {
+              await updates.checkInteractive(app.ask);
+            } finally {
+              setChecking(false);
+            }
+          }}
+        >
+          <Icon name="update" size={14} /> {checking ? "Checking…" : "Check for Updates"}
+        </button>
+        <label className="fc-row check">
+          <input
+            type="checkbox"
+            checked={app.settings.checkUpdates}
+            onChange={(e) => app.saveSettings({ ...app.settings, checkUpdates: e.target.checked })}
+          />
+          Check automatically
+        </label>
+      </div>
+    </>
   );
 }
 

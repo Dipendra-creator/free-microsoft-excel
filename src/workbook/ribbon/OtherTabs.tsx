@@ -1,4 +1,5 @@
 import type { MenuItem } from "../../components/Menu";
+import { updates } from "../../app/updates";
 import { CATEGORIES, FUNCTIONS, MOST_USED } from "../../lib/functions";
 import { isFullCols, isFullRows } from "../../lib/a1";
 import type { WorkbookController } from "../controller";
@@ -296,6 +297,11 @@ export function HelpTab({ ctl }: { ctl: WorkbookController }) {
         <BigButton icon="keyboard" label={"Keyboard\nShortcuts"} onClick={() => ctl.ui?.dialog("shortcuts")} />
         <BigButton icon="training" label={"Show\nTraining"} onClick={() => ctl.ui?.backstage("template:formula-tutorial")} />
         <BigButton icon="feedback" label="Feedback" onClick={() => ctl.ui?.dialog("feedback")} />
+        <BigButton
+          icon="update"
+          label={"Check for\nUpdates"}
+          onClick={() => updates.checkInteractive((t, m, b) => ctl.ui?.ask(t, m, b) ?? Promise.resolve("ok"))}
+        />
         <BigButton icon="about" label="About" onClick={() => ctl.ui?.dialog("about")} />
       </RibbonGroup>
     </>

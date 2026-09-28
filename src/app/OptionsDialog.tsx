@@ -81,6 +81,11 @@ export function OptionsDialog({ settings, onSave, onClose }: { settings: Setting
           <input type="checkbox" checked={s.csvBom} onChange={(e) => setS({ ...s, csvBom: e.target.checked })} />
           Save CSV files as UTF-8 with a byte order mark (Excel opens accents and non-Latin text correctly)
         </label>
+        <h3>Updates</h3>
+        <label className="fc-row check">
+          <input type="checkbox" checked={s.checkUpdates} onChange={(e) => setS({ ...s, checkUpdates: e.target.checked })} />
+          Check for new versions of Sheets automatically (a button appears in the title bar when one is available)
+        </label>
         <h3>Save</h3>
         <label className="fc-row">
           <span className="lbl">Save AutoRecover information every:</span>

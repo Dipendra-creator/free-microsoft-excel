@@ -46,6 +46,9 @@ pub struct SnapshotMeta {
     pub title: String,
     pub original_path: Option<String>,
     pub saved_at: u64,
+    /// "update" when kept because Sheets restarted to install an update.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -56,7 +59,7 @@ pub struct RecoveryItem {
     pub title: String,
     pub original_path: Option<String>,
     pub saved_at: u64,
-    /// "crashed" | "unsaved"
+    /// "crashed" | "updated" | "unsaved"
     pub kind: String,
     pub size: u64,
 }
@@ -157,6 +160,21 @@ impl RecoveryStore {
         self.discard_live(id);
     }
 
+    /// Sheets is restarting to install an update: keep the workbook so the
+    /// start screen offers it again (like a crash, but labelled as an update).
+    pub fn keep_for_restart(&self, id: &str, meta: &SnapshotMeta, bytes: &[u8]) -> AppResult<()> {
+        let meta = SnapshotMeta { reason: Some("update".into()), ..meta.clone() };
+        Self::write_pair(&self.crashed, id, &meta, bytes)?;
+        self.discard_live(id);
+        Ok(())
+    }
+
+    /// The update was not installed after all: forget what was kept for it.
+    pub fn forget_restart(&self, id: &str) {
+        let _ = fs::remove_file(self.crashed.join(format!("{id}.xlsx")));
+        let _ = fs::remove_file(self.crashed.join(format!("{id}.json")));
+    }
+
     pub fn list(&self) -> Vec<RecoveryItem> {
         let mut out = Vec::new();
         for (dir, kind) in [(&self.crashed, "crashed"), (&self.unsaved, "unsaved")] {
@@ -180,7 +198,7 @@ impl RecoveryStore {
                     } else {
                         fs_meta.as_ref().map(mtime_ms).unwrap_or(0)
                     },
-                    kind: kind.to_string(),
+                    kind: if meta.reason.as_deref() == Some("update") { "updated" } else { kind }.to_string(),
                     size: fs_meta.map(|m| m.len()).unwrap_or(0),
                 });
             }
@@ -230,6 +248,7 @@ pub fn snapshot_meta(title: &str, original_path: Option<String>) -> SnapshotMeta
         title: title.to_string(),
         original_path,
         saved_at: now_ms(),
+        reason: None,
     }
 }
 
@@ -370,6 +389,28 @@ mod tests {
         assert!(store.has_snapshot("new"));
         store.discard_live("new");
         assert!(!dir.join("recovery/live/new.xlsx").exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn kept_for_an_update_is_offered_after_restart() {
+        let dir = temp_dir("update-restart");
+        {
+            let store = RecoveryStore::new(&dir);
+            store.write_live("abc", 1, &snapshot_meta("Budget", None), b"old").unwrap();
+            store.keep_for_restart("abc", &snapshot_meta("Budget", None), b"new").unwrap();
+            // the live snapshot was replaced, so it is not offered twice
+            assert!(!dir.join("recovery/live/abc.xlsx").exists());
+            store.write_live("def", 1, &snapshot_meta("Plan", None), b"x").unwrap();
+            store.keep_for_restart("def", &snapshot_meta("Plan", None), b"y").unwrap();
+            store.forget_restart("def");
+        }
+        let store = RecoveryStore::new(&dir);
+        let items = store.list();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].title, "Budget");
+        assert_eq!(items[0].kind, "updated");
+        assert_eq!(fs::read(&items[0].file).unwrap(), b"new");
         let _ = fs::remove_dir_all(&dir);
     }
 

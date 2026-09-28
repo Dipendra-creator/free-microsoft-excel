@@ -1,6 +1,6 @@
 [package]
 name = "sheets"
-version = "0.3.0"
+version = "0.4.0"
 description = "Sheets - a lightweight, reliable spreadsheet desktop app"
 authors = ["Dipendra Bhardwaj"]
 edition = "2021"
@@ -30,6 +30,7 @@ uuid = { version = "1", features = ["v4"] }
 csv = "1"
 encoding_rs = "0.8"
 iana-time-zone = "0.1"
+semver = "1"
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]
@@ -41,3 +42,8 @@ strip = true
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
+# Same HTTP/TLS stack as the updater (no extra crates): used to read the
+# latest release from the GitHub API
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }

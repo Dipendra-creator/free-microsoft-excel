@@ -4,6 +4,7 @@ import { Icon } from "../components/Icon";
 import { Popup } from "../components/Popup";
 import { useApp } from "./context";
 import { isMac, keyLabel } from "../lib/platform";
+import { UpdateButton } from "./UpdateButton";
 
 export function WindowControls() {
   const [maximized, setMaximized] = useState(false);
@@ -188,6 +189,7 @@ export function TitleBar({ left, center, title, right }: { left?: ReactNode; cen
         {center}
       </div>
       <div className="tb-right" data-tauri-drag-region>
+        <UpdateButton />
         {right}
         <Avatar />
         {!isMac && <WindowControls />}

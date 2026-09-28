@@ -1,4 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { updates } from "../app/updates";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, errorMessage, type WorkbookInfo } from "../api";
@@ -107,6 +108,7 @@ function commandList(ctl: WorkbookController): SearchCommand[] {
     { label: "Workbook Statistics", icon: "stats", run: d("stats") },
     { label: "Zoom", icon: "zoom", run: d("zoom") },
     { label: "Keyboard Shortcuts", icon: "keyboard", run: d("shortcuts") },
+    { label: "Check for Updates", icon: "update", run: () => updates.checkInteractive((t, m, b) => ctl.ui?.ask(t, m, b) ?? Promise.resolve("ok")) },
     { label: "Save As", hint: "F12", icon: "saveAs", run: () => ctl.ui?.saveAs() },
     { label: "Filter", hint: "Ctrl+Shift+L", icon: "filter", run: () => ctl.toggleFilter() },
     { label: "Clear Filter", icon: "clear", run: () => ctl.clearFilter() },

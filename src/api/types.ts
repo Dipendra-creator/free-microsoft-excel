@@ -231,7 +231,7 @@ export interface RecoveryItem {
   title: string;
   originalPath: string | null;
   savedAt: number;
-  kind: "crashed" | "unsaved";
+  kind: "crashed" | "updated" | "unsaved";
   size: number;
 }
 
@@ -331,6 +331,27 @@ export interface Settings {
   csvBom: boolean;
   autorecoverSeconds: number;
   keepVersions: number;
+  /** Look for new versions in the background. */
+  checkUpdates: boolean;
+  lastVersion: string;
+}
+
+/** In-app updates (see src-tauri/src/updates.rs). */
+export interface UpdateStatus {
+  phase: "idle" | "checking" | "upToDate" | "available" | "downloading" | "ready" | "installing" | "error";
+  current: string;
+  version: string | null;
+  notes: string | null;
+  date: number | null;
+  /** Installs inside the app; otherwise `page` is opened to download it. */
+  installable: boolean;
+  page: string | null;
+  downloaded: number;
+  total: number | null;
+  error: string | null;
+  checkedAt: number | null;
+  /** Set once after an update: the version Sheets was updated from. */
+  updatedFrom: string | null;
 }
 
 export interface AppInfo {

@@ -907,6 +907,13 @@ const small: Record<string, Draw> = {
       <path d="M5.3 8.2l1.9 1.9 3.6-3.8" fill="none" stroke={G} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
+  /** New version available: a download arrow into a tray. */
+  update: () => (
+    <>
+      <path d="M8 2v8M4.8 7l3.2 3.2L11.2 7" {...s} />
+      <path d="M2.5 11v2.5h11V11" {...s} />
+    </>
+  ),
   recover: () => (
     <>
       <path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2M4.8 2.3v2.5h2.5" {...s} />

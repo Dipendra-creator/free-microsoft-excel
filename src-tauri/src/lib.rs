@@ -6,6 +6,7 @@
 //! * `templates` – template providers (built-in today, remote later)
 //! * `sync`      – change stream hook for future database synchronisation
 //! * `commands`  – Tauri IPC surface used by the frontend
+//! * `updates`   – in-app updates (signed releases from GitHub)
 
 mod commands;
 mod engine;
@@ -17,6 +18,8 @@ mod state;
 mod storage;
 mod sync;
 mod templates;
+#[cfg(desktop)]
+mod updates;
 
 use std::time::Duration;
 
@@ -40,13 +43,33 @@ pub fn run() {
             None => app::focus_any_window(handle),
         }
     }));
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
     builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let config_dir = app.path().app_config_dir()?;
             let data_dir = app.path().app_local_data_dir().unwrap_or_else(|_| config_dir.clone());
-            app.manage(state::AppState::new(&config_dir, &data_dir));
+            let state = state::AppState::new(&config_dir, &data_dir);
+            // Remember the version that ran, to say "Updated to …" once after an update
+            let version = app.package_info().version.to_string();
+            let updated_from = {
+                let mut store = state.settings.lock().unwrap();
+                let last = std::mem::replace(&mut store.value.last_version, version.clone());
+                if last != version {
+                    store.save();
+                }
+                (!last.is_empty() && updates_newer(&version, &last)).then_some(last)
+            };
+            app.manage(state);
+            #[cfg(desktop)]
+            {
+                app.manage(updates::Updates::new(version, updated_from));
+                updates::start_background_checks(app.handle().clone());
+            }
+            #[cfg(not(desktop))]
+            let _ = updated_from;
             // AutoRecover: snapshot changed workbooks in the background.
             let handle = app.handle().clone();
             std::thread::spawn(move || loop {
@@ -65,6 +88,16 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            #[cfg(desktop)]
+            updates::update_status,
+            #[cfg(desktop)]
+            updates::update_check,
+            #[cfg(desktop)]
+            updates::update_download,
+            #[cfg(desktop)]
+            updates::update_install,
+            #[cfg(desktop)]
+            updates::update_unsaved,
             app::app_info,
             app::update_settings,
             app::list_recent,
@@ -183,4 +216,12 @@ pub fn run() {
                 }
             }
         });
+}
+
+/// `a` is a newer semantic version than `b`.
+fn updates_newer(a: &str, b: &str) -> bool {
+    match (semver::Version::parse(a), semver::Version::parse(b)) {
+        (Ok(a), Ok(b)) => a > b,
+        _ => false,
+    }
 }

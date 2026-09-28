@@ -226,3 +226,144 @@
 .titlebar.mac .tb-right {
   padding-right: 8px;
 }
+
+/* ---------- Update button (title bar) ---------- */
+.update-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  margin-right: 6px;
+  padding: 0 10px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--accent-btn);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.update-btn:hover {
+  background: var(--accent-btn-hover);
+}
+.update-btn span {
+  position: relative;
+  z-index: 1;
+}
+.update-btn svg {
+  position: relative;
+  z-index: 1;
+}
+.update-btn.phase-downloading,
+.update-btn.phase-installing {
+  background: var(--surface-2, #2b2b2b);
+  border-color: var(--accent-btn);
+  color: var(--text);
+}
+.update-btn .update-btn-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 0;
+  background: var(--accent-btn);
+  opacity: 0.45;
+  transition: width 0.2s;
+}
+.update-btn.phase-ready {
+  background: #c35a00;
+}
+.update-btn.phase-ready:hover {
+  background: #d86a0a;
+}
+.update-btn.phase-error {
+  background: transparent;
+  border-color: #c9483c;
+  color: var(--text);
+}
+.update-btn.phase-updated {
+  background: transparent;
+  border-color: var(--accent-btn);
+  color: var(--accent-text, var(--text));
+}
+
+.update-panel {
+  width: 380px;
+  padding: 14px 16px;
+}
+.update-panel .up-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.update-notes {
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 6px 0 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-2, transparent);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.update-notes h4 {
+  margin: 6px 0 4px;
+  font-size: 12px;
+}
+.update-notes p {
+  margin: 4px 0;
+}
+.update-notes ul {
+  margin: 2px 0 6px;
+  padding-left: 18px;
+}
+.update-notes code {
+  font-size: 11px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(127, 127, 127, 0.18);
+}
+.up-progress {
+  height: 6px;
+  margin: 8px 0 12px;
+  border-radius: 3px;
+  background: rgba(127, 127, 127, 0.25);
+  overflow: hidden;
+}
+.up-progress-bar {
+  height: 100%;
+  background: var(--accent-btn);
+  transition: width 0.2s;
+}
+.up-error {
+  color: #e0685c;
+  font-size: 12px;
+}
+.up-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn.link {
+  padding-left: 0;
+  padding-right: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text, var(--accent));
+  text-decoration: underline;
+}
+.update-options {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.update-options .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

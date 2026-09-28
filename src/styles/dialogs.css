@@ -70,6 +70,10 @@
   font-size: 13px;
 }
 
+.message-text {
+  white-space: pre-line;
+}
+
 .message-text p {
   margin: 0 0 6px;
   white-space: pre-wrap;
