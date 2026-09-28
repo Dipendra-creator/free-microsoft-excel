@@ -25,7 +25,7 @@
 <text x="146" y="106" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="38" font-weight="700" fill="#FFFFFF" text-anchor="start" >Sheets</text>
 <text x="1008" y="104" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="600" fill="#A9DDBF" text-anchor="end" >7 / 7</text>
 <text x="72" y="290" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="116" font-weight="800" fill="#FFFFFF" text-anchor="start" >Try it free.</text>
-<text x="72" y="360" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="34" font-weight="500" fill="#D8F3E4" text-anchor="start" >Takes a minute. Needs no account.</text>
+<text x="72" y="360" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="34" font-weight="500" fill="#D8F3E4" text-anchor="start" >Open source (MIT). Needs no account.</text>
 <rect x="72" y="430" width="936" height="128" rx="22" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.16)" stroke-width="2"/>
 <circle cx="138" cy="494" r="34" fill="#7FE0A8"/>
 <text x="138" y="507" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="34" font-weight="800" fill="#0B3D23" text-anchor="middle" >1</text>

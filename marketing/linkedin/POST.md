@@ -40,15 +40,15 @@ Who it's for:
 🔬 Researchers tired of IDs and gene names being mangled
 🍎 Mac users who want the same app as their Windows colleagues
 
-Free. No account. No telemetry.
+Free and open source (MIT License). No account. No telemetry.
 
 ⬇️ Download link in the first comment.
 💬 Try it with one of your real files and tell me what's missing — the roadmap is built from your feedback.
 
-#Excel #Spreadsheets #Productivity #SmallBusiness #FreeSoftware
+#Excel #Spreadsheets #Productivity #SmallBusiness #OpenSource
 ```
 
-Add this line before "Free. No account." **only after v0.4.0 is released** (it's the first version with in-app updates):
+Add this line before "Free and open source." **only after v0.4.0 is released** (it's the first version with in-app updates):
 
 ```
 🔄 Updates itself: when a new version is out, an Update button appears in the title bar.
@@ -81,9 +81,9 @@ Sheets opens and saves your .xlsx files, has ~490 Excel functions (XLOOKUP inclu
 
 And it never silently changes your data: 00501 stays 00501, long IDs keep every digit, and your work is auto-saved every 30 seconds.
 
-Free, no account. Link in the comments 👇
+Free, open source, no account. Link in the comments 👇
 
-#Excel #Productivity #FreeSoftware
+#Excel #Productivity #OpenSource
 ```
 
 ## 4. Follow-up posts, one audience at a time
@@ -140,13 +140,13 @@ Free, Windows and macOS. Link in the comments. #Productivity #Excel
 
 ## 5. Image alt text (LinkedIn: "Alt text" on each image)
 
-1. Sheets cover: "Excel files. Zero cost. About 5 MB." above a screenshot of the Sheets app showing a personal monthly budget with a chart.
+1. Sheets cover, labelled "Free & open source · Windows & macOS": "Excel files. Zero cost. About 5 MB." above a screenshot of the Sheets app showing a personal monthly budget with a chart.
 2. Four examples of Excel changing data — 00501 becomes 501, a 16-digit card number loses its last digit, SEPT1 becomes 1-Sep, café becomes cafÃ© — while Sheets keeps each value exactly.
 3. Sheets safety features: AutoRecover every 30 seconds, "Don't Save" undoable for 7 days, 20 versions per file, crash-safe saves.
 4. Grid of 12 Sheets features: 490 functions, charts, PivotTables, filter and sort, conditional formats, Flash Fill, AutoFill Options, Paste Special, Excel shortcuts, Check Workbook, print and PDF, .xlsx and CSV.
 5. Who Sheets is for: students, small businesses, analysts, researchers, Mac users and IT teams.
 6. Comparison: about 4 MB download for Sheets versus 4 GB (Windows) or 10 GB (Mac) of disk space for Microsoft 365; free versus subscription; no account; AutoRecover every 30 seconds versus 10 minutes; unlimited undo versus 100 steps.
-7. Try it free: download, open any .xlsx or CSV file, send feedback. Download link: github.com/Dipendra-creator/free-microsoft-excel.
+7. Try it free — open source (MIT), no account: download, open any .xlsx or CSV file, send feedback. Download link: github.com/Dipendra-creator/free-microsoft-excel.
 
 ## 6. Posting tips
 
@@ -155,4 +155,4 @@ Free, Windows and macOS. Link in the comments. #Productivity #Excel
 - **First hour:** reply to every comment; ask people which feature they want next.
 - **Name:** call it **"Sheets"** or "a free Excel alternative" — not "free Microsoft Excel". Using Microsoft's name as the product name invites trademark problems and makes it look official when it isn't. The last slide carries a "not affiliated with Microsoft" note for the same reason.
 - **Claims:** every number on the slides is sourced — Microsoft's system requirements (4 GB / 10 GB), Excel's default AutoRecover interval (10 minutes) and undo limit (100), the gene-renaming story (HGNC, 2020), and Sheets' own release sizes. Keep the footnote on slide 6.
-- If you add a LICENSE file (e.g. MIT) to the repository, you can also call it **open source**; until then say "free" and "code on GitHub".
+- **Open source:** the repository has an MIT `LICENSE`, so "free and open source" is accurate. Anyone may use, change and share the code, as long as your copyright notice stays with it.

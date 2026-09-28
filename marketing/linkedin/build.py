@@ -211,8 +211,8 @@ def slide1():
 <circle cx="980" cy="160" r="260" fill="{G3}" opacity="0.18"/>
 <circle cx="90" cy="1250" r="220" fill="{G4}" opacity="0.10"/>
 {header(1, dark=True)}
-<rect x="72" y="178" width="580" height="48" rx="24" fill="rgba(255,255,255,0.12)"/>
-{text(96, 211, "FREE SPREADSHEET · WINDOWS & macOS", 22, 700, MINT, extra='letter-spacing="2"')}
+<rect x="72" y="178" width="640" height="48" rx="24" fill="rgba(255,255,255,0.12)"/>
+{text(96, 211, "FREE & OPEN SOURCE · WINDOWS & macOS", 22, 700, MINT, extra='letter-spacing="2"')}
 {text(72, 340, "Excel files.", 104, 800, "#FFFFFF")}
 {text(72, 458, "Zero cost.", 104, 800, "#FFFFFF")}
 {text(72, 576, "About 5 MB.", 104, 800, MINT)}
@@ -457,7 +457,7 @@ def slide7():
              f'<circle cx="960" cy="1180" r="300" fill="{G3}" opacity="0.16"/>',
              header(7, dark=True)]
     parts.append(text(72, 290, "Try it free.", 116, 800, "#FFFFFF"))
-    parts.append(text(72, 360, "Takes a minute. Needs no account.", 34, 500, "#D8F3E4"))
+    parts.append(text(72, 360, "Open source (MIT). Needs no account.", 34, 500, "#D8F3E4"))
     y = 430
     for n, title, sub in steps:
         parts.append(f'<rect x="72" y="{y}" width="936" height="128" rx="22" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.16)" stroke-width="2"/>')
@@ -485,7 +485,7 @@ def banner():
 {text(60, 212, "A free spreadsheet", 50, 800, "#FFFFFF")}
 {text(60, 272, "that opens your", 50, 800, "#FFFFFF")}
 {text(60, 332, "Excel files.", 50, 800, MINT)}
-{text(60, 392, "Windows & macOS · about 5 MB · No account", 24, 600, "#D8F3E4")}
+{text(60, 392, "Windows & macOS · about 5 MB · Open source", 24, 600, "#D8F3E4")}
 {text(60, 430, "Never silently changes or loses your data.", 24, 400, "#D8F3E4")}
 <rect x="60" y="476" width="360" height="60" rx="30" fill="{MINT}"/>
 {text(240, 515, "Download free →", 26, 800, G1, "middle")}

@@ -4,11 +4,12 @@
 
 [![CI](https://github.com/Dipendra-creator/free-microsoft-excel/actions/workflows/ci.yml/badge.svg)](https://github.com/Dipendra-creator/free-microsoft-excel/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Dipendra-creator/free-microsoft-excel?label=download)](https://github.com/Dipendra-creator/free-microsoft-excel/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Sheets looks and works like Excel — ribbon, formula bar, ~490 Excel functions,
 formatting, conditional formatting, filters, charts, PivotTables — but it is a
-few megabytes instead of gigabytes, it is free, and it is built around one idea:
-**a spreadsheet must never silently change or lose your data.**
+few megabytes instead of gigabytes, it is free and open source, and it is built
+around one idea: **a spreadsheet must never silently change or lose your data.**
 
 Built with Rust ([Tauri 2](https://tauri.app) + the [IronCalc](https://github.com/ironcalc/IronCalc) engine) and a React/TypeScript UI.
 
@@ -242,3 +243,13 @@ Key design points:
   ~150 ms for 500k filled cells. Fraction number formats render incorrectly in this
   IronCalc version.
 - Builds are not code-signed or notarized yet (see *Download*).
+
+---
+
+## License
+
+Sheets is free and open source under the [MIT License](LICENSE): you may use, copy, modify and
+share it, including commercially, as long as the copyright and licence notice stay with it.
+
+Excel and Microsoft 365 are trademarks of Microsoft Corporation. Sheets is an independent project
+and is not affiliated with, endorsed by or sponsored by Microsoft.
