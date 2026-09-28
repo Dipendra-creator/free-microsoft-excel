@@ -177,8 +177,10 @@ cd .. && pnpm typecheck                                              # TypeScrip
 variables → Actions): `TAURI_SIGNING_PRIVATE_KEY` (the private key file's contents) and, if the
 key has a password, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. The matching public key is
 `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`. With the secret set, each release gets
-signed update files and a `latest.json`, and installed copies update themselves; without it the
-release is still built and the app only announces it. Keep the private key safe: if it is lost,
+signed update files and a `latest.json`, and installed copies update themselves. Without it the
+build stops with an error and the release stays a draft: add the secret and re-run the **Release**
+workflow (a repository variable `ALLOW_UNSIGNED_RELEASE` = `true` builds an unsigned release
+anyway, which the app only announces). Keep the private key safe: if it is lost,
 generate a new pair (`pnpm tauri signer generate -w ~/.tauri/sheets.key`), put the new public
 key in `tauri.conf.json`, and users install that release once by hand.
 

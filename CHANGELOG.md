@@ -2,11 +2,19 @@
 
 All notable changes to Sheets. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.4.2] — 2026-09-28
+
+### Updates
+- Signed update files: Sheets 0.4.0 and 0.4.1 show **Update available** in the
+  title bar and install this version in one click. (0.4.1 was published
+  without them because the signing key wasn't available to the release build.)
+- Release pipeline: a release build without the update-signing key now stops
+  with an error instead of publishing a release that installed copies can't
+  update to.
+
 ## [0.4.1] — 2026-09-28
 
 ### Updates
-- First release with signed update files: Sheets 0.4.0 shows **Update
-  available** in the title bar and installs this version in one click.
 - The portable Windows `.exe` no longer installs a second copy of Sheets when
   it updates. It announces the new version and links to the new portable file.
 
