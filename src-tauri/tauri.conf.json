@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Sheets",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.internal.sheets",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -29,8 +29,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "shortDescription": "Lightweight spreadsheet",
+    "targets": "all",
+    "shortDescription": "Lightweight, reliable spreadsheet",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -40,17 +40,34 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["xlsx"],
+        "ext": [
+          "xlsx",
+          "xlsm"
+        ],
         "name": "Excel Workbook",
         "description": "Excel Workbook",
-        "role": "Editor"
+        "role": "Editor",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       },
       {
-        "ext": ["csv"],
+        "ext": [
+          "csv"
+        ],
         "name": "CSV File",
         "description": "Comma separated values",
-        "role": "Editor"
+        "role": "Editor",
+        "mimeType": "text/csv"
       }
-    ]
+    ],
+    "longDescription": "Sheets is a fast, lightweight spreadsheet app that opens and saves Excel .xlsx files, with AutoRecover, version history and data-integrity safeguards.",
+    "copyright": "Copyright © 2026 Dipendra Bhardwaj",
+    "category": "Productivity",
+    "publisher": "Dipendra Bhardwaj",
+    "homepage": "https://github.com/dipendra-creator/free-microsoft-excel",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
   }
 }

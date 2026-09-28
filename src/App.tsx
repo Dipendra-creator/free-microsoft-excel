@@ -172,7 +172,8 @@ export default function App() {
     // Block the browser context menu / reload shortcuts in production
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "F5" && !e.ctrlKey) e.preventDefault();
-      if ((e.ctrlKey && e.key.toLowerCase() === "r") || (e.ctrlKey && e.key.toLowerCase() === "p")) e.preventDefault();
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && (e.key.toLowerCase() === "r" || e.key.toLowerCase() === "p")) e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
     return () => {

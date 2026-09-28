@@ -279,7 +279,7 @@ export function WorkbookView({ info }: { info: WorkbookInfo }) {
         e.preventDefault();
         ctl.formulaBarExpanded = !ctl.formulaBarExpanded;
         ctl.emit();
-      } else if (e.ctrlKey && (e.key === "s" || e.key === "S") && document.activeElement !== editorRef.current) {
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S") && document.activeElement !== editorRef.current) {
         e.preventDefault();
         ctl.save();
       }

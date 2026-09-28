@@ -13,7 +13,7 @@ pub use input::protect_literal;
 pub use session::format_preview;
 pub use session::{
     ClipboardPayload, DefinedNameDto, EngineConfig, FilterValue, FindOptions, FoundCell, HealthReport, PivotSpec,
-    Session, SortKey, SplitOptions, WorkbookStats,
+    RangeValues, Session, SortKey, SplitOptions, WorkbookStats,
 };
 
 #[cfg(test)]

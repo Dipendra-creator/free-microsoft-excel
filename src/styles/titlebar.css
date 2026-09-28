@@ -215,3 +215,14 @@
   gap: 12px;
   align-items: center;
 }
+
+/* macOS: native traffic lights overlay the left of the title bar */
+.titlebar.mac .tb-traffic {
+  display: inline-block;
+  width: 72px;
+  height: 100%;
+  flex: none;
+}
+.titlebar.mac .tb-right {
+  padding-right: 8px;
+}

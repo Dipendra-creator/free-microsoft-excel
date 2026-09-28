@@ -30,7 +30,7 @@ use crate::{
 
 mod features;
 
-pub use features::{FilterValue, HealthReport, PivotSpec, SplitOptions};
+pub use features::{FilterValue, HealthReport, PivotSpec, RangeValues, SplitOptions};
 
 pub type Engine = UserModel<'static>;
 

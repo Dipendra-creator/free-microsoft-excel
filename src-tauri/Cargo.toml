@@ -1,8 +1,8 @@
 [package]
 name = "sheets"
-version = "0.1.0"
-description = "Sheets - lightweight spreadsheet desktop app"
-authors = ["Internal"]
+version = "0.2.0"
+description = "Sheets - a lightweight, reliable spreadsheet desktop app"
+authors = ["Dipendra Bhardwaj"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

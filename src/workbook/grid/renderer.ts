@@ -941,7 +941,9 @@ export class GridRenderer {
     }
     void colPanes;
 
-    // Row header strip
+    // Row header strip (rows of an active filter are numbered in blue, like Excel)
+    const f = ctl.filter;
+    const filtered = (r: number) => !!f && f.active.length > 0 && r > f.r1 && r <= f.r2;
     const drawnRows = new Set<string>();
     for (const p of panes) {
       const key = `${p.rows[0]}-${p.rows[1]}-${p.clip.y}`;
@@ -965,7 +967,7 @@ export class GridRenderer {
         ctx.fillStyle = t.headerLine;
         ctx.fillRect(0, d(y + h) - 1, d(hw), 1);
         if (ctl.rows.hiddenBetween(r, ctl.rows.next(r))) ctx.fillRect(0, d(y + h) - 2, d(hw), 2);
-        ctx.fillStyle = inSel ? (fullRows ? t.headerFullText : t.headerSelText) : t.headerText;
+        ctx.fillStyle = inSel ? (fullRows ? t.headerFullText : t.headerSelText) : filtered(r) ? "#4C9BE8" : t.headerText;
         if (h > 8 * ctl.zoom) ctx.fillText(String(r), d(hw / 2), d(y + h / 2) + 1);
       }
       ctx.restore();

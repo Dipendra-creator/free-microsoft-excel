@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "../components/Icon";
 import { Popup } from "../components/Popup";
 import { useApp } from "./context";
+import { isMac, keyLabel } from "../lib/platform";
 
 export function WindowControls() {
   const [maximized, setMaximized] = useState(false);
@@ -152,7 +153,7 @@ export function CommandSearch({ commands, onFind }: { commands: () => SearchComm
               >
                 <span className="menu-icon">{c.icon && <Icon name={c.icon} />}</span>
                 <span className="menu-label">{c.label}</span>
-                {c.hint && <span className="menu-shortcut">{c.hint}</span>}
+                {c.hint && <span className="menu-shortcut">{keyLabel(c.hint)}</span>}
               </div>
             ))}
             {items.length === 0 && <div className="menu-item disabled">No results</div>}
@@ -165,8 +166,10 @@ export function CommandSearch({ commands, onFind }: { commands: () => SearchComm
 
 export function TitleBar({ left, center, title, right }: { left?: ReactNode; center?: ReactNode; title?: string; right?: ReactNode }) {
   return (
-    <div className="titlebar" data-tauri-drag-region>
+    <div className={`titlebar ${isMac ? "mac" : ""}`} data-tauri-drag-region>
       <div className="tb-left" data-tauri-drag-region>
+        {/* macOS draws its traffic-light buttons here */}
+        {isMac && <span className="tb-traffic" data-tauri-drag-region />}
         <span className="tb-logo" data-tauri-drag-region>
           <Icon name="logo" size={16} />
         </span>
@@ -183,7 +186,7 @@ export function TitleBar({ left, center, title, right }: { left?: ReactNode; cen
       <div className="tb-right" data-tauri-drag-region>
         {right}
         <Avatar />
-        <WindowControls />
+        {!isMac && <WindowControls />}
       </div>
     </div>
   );

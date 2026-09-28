@@ -332,6 +332,9 @@ input.tiny {
   border-radius: 4px;
 }
 .recovery-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 0 4px;
   font-size: 15px;
 }

@@ -3,6 +3,7 @@ import { ColorPicker } from "../../components/ColorPicker";
 import { Icon } from "../../components/Icon";
 import { MenuList, type MenuItem } from "../../components/Menu";
 import { Popup } from "../../components/Popup";
+import { keyLabel } from "../../lib/platform";
 
 /** Dropdown state that ignores the click that closed it (toggle behaviour). */
 function useDropdown() {
@@ -85,7 +86,7 @@ export function BigButton({
       <button
         className={`rb-big ${active ? "active" : ""} ${dd.anchor ? "open" : ""}`}
         disabled={disabled}
-        title={title ?? label.replace("\n", " ")}
+        title={keyLabel(title ?? label.replace("\n", " "))}
         tabIndex={-1}
         onMouseDown={(e) => e.preventDefault()}
         onClick={(e) => {
@@ -136,7 +137,7 @@ export function BigSplit({
   const dd = useDropdown();
   return (
     <div className={`rb-bigsplit ${dd.anchor ? "open" : ""}`}>
-      <button className="rb-bigsplit-main" disabled={disabled} title={title ?? label} tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={onClick}>
+      <button className="rb-bigsplit-main" disabled={disabled} title={keyLabel(title ?? label)} tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={onClick}>
         <Icon name={icon} size={32} />
       </button>
       <button
@@ -179,7 +180,7 @@ export function SmallButton({
       <button
         className={`rb-small ${active ? "active" : ""} ${dd.anchor ? "open" : ""} ${label ? "with-label" : ""}`}
         disabled={disabled}
-        title={title ?? label}
+        title={keyLabel(title ?? label)}
         tabIndex={-1}
         onMouseDown={(e) => e.preventDefault()}
         onClick={(e) => {
@@ -223,7 +224,7 @@ export function SplitButton({
       <button
         className="rb-split-main"
         disabled={disabled}
-        title={title ?? label}
+        title={keyLabel(title ?? label)}
         tabIndex={-1}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onClick}

@@ -527,6 +527,10 @@ fn pivot_summarises_with_live_formulas() {
     assert_eq!(t(&s, 4, 3), "5");
     assert_eq!(t(&s, 4, 4), "15");
     assert_eq!(t(&s, 7, 4), "43");
+    // Header row is highlighted across the whole table
+    for c in 1..=4 {
+        assert!(s.cell_info(index, 3, c).unwrap().style.fill.is_some(), "no fill in column {c}");
+    }
     // Live: changing the source updates the summary
     s.set_input(0, 2, 3, "100", true).unwrap();
     assert_eq!(t(&s, 4, 2), "100");
@@ -593,4 +597,19 @@ fn csv_encodings_and_export_precision() {
     assert!(content.contains("1.23456"), "{content}");
     assert!(content.contains("\"$1,200.00\""), "{content}");
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn pivot_without_column_field() {
+    let mut s = session();
+    fruit_table(&mut s);
+    let spec = super::PivotSpec { source: Rect::new(1, 1, 6, 3), rows_col: 1, cols_col: None, value_col: Some(3), func: "sum".into() };
+    let index = s.create_pivot(0, &spec).unwrap();
+    let t = |s: &Session, r: i32, c: i32| s.cell_info(index, r, c).unwrap().formatted;
+    assert_eq!(t(&s, 3, 2), "Grand Total");
+    assert_eq!(t(&s, 5, 2), "21");
+    assert_eq!(t(&s, 7, 2), "43");
+    for c in 1..=2 {
+        assert!(s.cell_info(index, 3, c).unwrap().style.fill.is_some(), "no fill in column {c}");
+    }
 }

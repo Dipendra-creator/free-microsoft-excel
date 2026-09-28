@@ -161,7 +161,9 @@ async function sheetHtml(ctl: WorkbookController, sheet: number, opts: PrintOpti
     let y = (opts.headings ? 20 : 0) + chart.dy;
     for (let r = rect.r1; r < chart.row; r++) y += rh(r);
     try {
-      const values = await api.rangeValues(ctl.id, sheet, chart.range);
+      const values = (await api.rangeValues(ctl.id, sheet, chart.range))
+        .filter((_, i) => rh(chart.range.r1 + i) > 0)
+        .map((row) => row.filter((_, j) => cw(chart.range.c1 + j) > 0));
       const svg = staticMarkup(
         createElement(ChartSvg, {
           kind: chart.kind,

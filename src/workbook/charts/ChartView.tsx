@@ -44,6 +44,10 @@ export function buildChartData(values: RangeValue[][], seriesInRows: boolean): C
   const categories = body.map((row, i) => (labelCol ? row[0][1] : String(i + 1)));
   const series: Series[] = [];
   for (let c = firstSeries; c < cols; c++) {
+    // Columns that are mostly text (names, IDs stored as text) are not series
+    const numbers = body.filter((row) => row[c][0] !== null).length;
+    const texts = body.filter((row) => row[c][0] === null && row[c][1].trim() !== "").length;
+    if (numbers === 0 || numbers < texts) continue;
     series.push({
       name: hasHeader ? grid[0][c][1] || `Series${series.length + 1}` : `Series${series.length + 1}`,
       values: body.map((row) => row[c][0]),

@@ -198,9 +198,18 @@ pub async fn open_book_window(app: AppHandle, state: State<'_, AppState>, book: 
         .title(format!("{title} - {APP_NAME}"))
         .inner_size(1400.0, 880.0)
         .min_inner_size(760.0, 480.0)
-        .decorations(false)
         .background_color(tauri::window::Color(20, 20, 20, 255))
         .position(60.0 + offset, 40.0 + offset);
+    // macOS keeps its native traffic-light buttons over our title bar;
+    // Windows and Linux use the app's own caption buttons.
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .decorations(true)
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true)
+        .traffic_light_position(tauri::LogicalPosition::new(14.0, 17.0));
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.decorations(false);
     builder.build()?;
     Ok(())
 }

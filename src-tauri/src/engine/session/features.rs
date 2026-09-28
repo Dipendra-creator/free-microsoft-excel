@@ -18,6 +18,9 @@ use crate::{
     error::{AppError, AppResult},
 };
 
+/// `[number or null, displayed text]` per cell, row-major.
+pub type RangeValues = Vec<Vec<(Option<f64>, String)>>;
+
 const CHART_KINDS: [&str; 7] = ["column", "bar", "line", "area", "pie", "doughnut", "scatter"];
 
 /// One distinct value of a filter column.
@@ -239,7 +242,7 @@ impl Session {
     }
 
     /// `[number or null, displayed text]` for every cell of a range (charts).
-    pub fn range_values(&self, sheet: u32, rect: Rect) -> AppResult<Vec<Vec<(Option<f64>, String)>>> {
+    pub fn range_values(&self, sheet: u32, rect: Rect) -> AppResult<RangeValues> {
         let (max_row, max_col) = self.used_extent(sheet);
         let rect = rect.clamp_to(max_row, max_col);
         if (rect.width() as i64) * (rect.height() as i64) > 200_000 {
@@ -734,6 +737,8 @@ impl Session {
             let r = s.model.update_range_style(&bold(total_row, 1, total_row, last_col), "font.b", "true");
             Self::step(tx, r)?;
             let r = s.model.set_columns_width(index, 1, 1, crate::engine::dto::px_to_engine_col(160.0));
+            Self::step(tx, r)?;
+            let r = s.model.set_columns_width(index, 2, last_col, crate::engine::dto::px_to_engine_col(96.0));
             Self::step(tx, r)?;
             Ok(())
         });

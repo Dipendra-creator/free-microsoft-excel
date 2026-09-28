@@ -483,6 +483,18 @@ export function Backstage({ initial, book, onPageChange }: { initial?: Backstage
     setPage(p);
     onPageChange?.(p);
   };
+  // Esc returns to the workbook, like Excel's File menu
+  useEffect(() => {
+    if (!book) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.querySelector(".dialog-backdrop")) {
+        e.preventDefault();
+        book.back();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [book]);
   const item = (p: BackstagePage, icon: string, label: string) => (
     <button className={`bs-nav ${page === p ? "active" : ""}`} onClick={() => go(p)}>
       <Icon name={icon} size={20} />

@@ -131,7 +131,11 @@ function ChartBox({ ctl, chart, stamp, zoom }: { ctl: WorkbookController; chart:
   // Cull charts that are far outside the view
   if (x > ctl.viewport.width + 50 || y > ctl.viewport.height + 50 || x + ww < -50 || y + hh < -50) return null;
 
-  const data = values ? buildChartData(values, chart.seriesInRows) : null;
+  // Like Excel, rows and columns hidden (e.g. by a filter) are left out
+  const shown = values
+    ?.filter((_, i) => ctl.rows.size(r.r1 + i) > 0)
+    .map((row) => row.filter((_, j) => ctl.cols.size(r.c1 + j) > 0));
+  const data = shown ? buildChartData(shown, chart.seriesInRows) : null;
   return (
     <div
       className={`chart-box ${selected ? "selected" : ""}`}

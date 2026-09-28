@@ -10,7 +10,7 @@ use crate::{
         a1::Rect,
         dto::WorkbookInfo,
         extras::{ChartSpec, Note},
-        FilterValue, HealthReport, PivotSpec, Session, SplitOptions,
+        FilterValue, HealthReport, PivotSpec, RangeValues, Session, SplitOptions,
     },
     error::{AppError, AppResult},
     recovery::{snapshot_meta, RecoveryItem, VersionItem},
@@ -71,7 +71,7 @@ pub fn chart_delete(state: State<'_, AppState>, book: String, sheet: u32, id: St
 }
 
 #[tauri::command(async)]
-pub fn range_values(state: State<'_, AppState>, book: String, sheet: u32, rect: Rect) -> AppResult<Vec<Vec<(Option<f64>, String)>>> {
+pub fn range_values(state: State<'_, AppState>, book: String, sheet: u32, rect: Rect) -> AppResult<RangeValues> {
     state.read(&book, |s| s.range_values(sheet, norm(rect)))
 }
 
