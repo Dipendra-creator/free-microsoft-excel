@@ -11,7 +11,10 @@ name: Release
 on:
   push:
     tags: ["v*"]
-    branches: [main]
+    branches:
+      - main
+      # One-off: restores the v0.2.0 tag on the release built from this branch.
+      - claude/adoring-cori-us8u2f
   workflow_dispatch:
 
 concurrency:
@@ -62,7 +65,20 @@ jobs:
               .replaceAll('{{TAG}}', TAG)
               .replaceAll('{{REPO}}', repo);
             const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
-            const existing = releases.find((r) => r.tag_name === TAG);
+            let existing = releases.find((r) => r.tag_name === TAG);
+            // GitHub resets a draft's tag to "untagged-…" when the draft is edited
+            // without tag_name; find such a release by name and restore its tag.
+            const orphan = releases.find((r) => r.name === `Sheets ${TAG}` && r.tag_name.startsWith('untagged-'));
+            if (!existing && orphan) {
+              const { data } = await github.rest.repos.updateRelease({
+                ...context.repo,
+                release_id: orphan.id,
+                tag_name: TAG,
+                target_commitish: orphan.target_commitish,
+              });
+              core.notice(`Restored tag ${TAG} on release ${orphan.id}`);
+              existing = data;
+            }
             core.setOutput('skip', 'false');
             if (existing && !existing.draft && context.eventName === 'push' && context.ref.startsWith('refs/heads/')) {
               core.notice(`${TAG} is already released; bump the version in src-tauri/tauri.conf.json to publish a new release.`);
@@ -72,7 +88,7 @@ jobs:
             if (existing) {
               // A retried draft follows the commit being built
               const update = existing.draft ? { target_commitish: context.sha } : {};
-              await github.rest.repos.updateRelease({ ...context.repo, release_id: existing.id, body, ...update });
+              await github.rest.repos.updateRelease({ ...context.repo, release_id: existing.id, tag_name: TAG, body, ...update });
               return existing.id;
             }
             const { data } = await github.rest.repos.createRelease({
@@ -176,11 +192,14 @@ jobs:
         uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          TAG: ${{ needs.create-release.outputs.tag }}
         with:
           script: |
+            // tag_name must be sent again, or GitHub publishes the draft untagged
             await github.rest.repos.updateRelease({
               ...context.repo,
               release_id: Number(process.env.RELEASE_ID),
+              tag_name: process.env.TAG,
               draft: false,
               prerelease: false,
               make_latest: 'true',
