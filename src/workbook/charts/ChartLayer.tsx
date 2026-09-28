@@ -90,9 +90,10 @@ function ChartBox({ ctl, chart, stamp, zoom }: { ctl: WorkbookController; chart:
   };
 
   const start = (e: React.MouseEvent, mode: "move" | "resize", handle?: string) => {
+    // Never let the grid underneath react (it would select cells / open its menu)
+    e.stopPropagation();
     if (e.button !== 0) return;
     e.preventDefault();
-    e.stopPropagation();
     if (ctl.edit) ctl.commitEdit("none");
     ctl.selectChart(chart.id);
     ctl.ui?.focusGrid();
@@ -177,7 +178,12 @@ function ChartBox({ ctl, chart, stamp, zoom }: { ctl: WorkbookController; chart:
           </button>
         </>
       )}
-      {menu && <Menu anchor={menu} items={chartMenu(ctl, chart)} onClose={() => setMenu(null)} />}
+      {menu && (
+        // The menu is portaled, but React events still bubble to the chart box
+        <div onMouseDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+          <Menu anchor={menu} items={chartMenu(ctl, chart)} onClose={() => setMenu(null)} />
+        </div>
+      )}
     </div>
   );
 }
