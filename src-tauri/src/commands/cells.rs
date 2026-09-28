@@ -6,7 +6,7 @@ use crate::{
     engine::{
         a1::Rect,
         dto::{CellInfo, CellsChunk, SelectionStats, StylePatch, WorkbookInfo},
-        DefinedNameDto, FindOptions, FoundCell, SortKey,
+        DefinedNameDto, FillMode, FillReport, FindOptions, FlashFillResult, FoundCell, SeriesSpec, SortKey,
     },
     error::{AppError, AppResult},
     state::AppState,
@@ -274,11 +274,55 @@ pub fn range_delete_cells(state: State<'_, AppState>, book: String, sheet: u32, 
     })
 }
 
+/// Fill handle / Ctrl+D / AutoFill Options. `target` includes the source.
 #[tauri::command(async)]
-pub fn range_fill(state: State<'_, AppState>, book: String, sheet: u32, source: Rect, target: Rect) -> AppResult<WorkbookInfo> {
+pub fn range_fill(
+    state: State<'_, AppState>,
+    book: String,
+    sheet: u32,
+    source: Rect,
+    target: Rect,
+    mode: Option<FillMode>,
+) -> AppResult<(FillReport, WorkbookInfo)> {
     state.with(&book, |s| {
-        s.auto_fill(sheet, norm(source), norm(target))?;
-        Ok(s.info())
+        let report = s.fill(sheet, norm(source), norm(target), mode.unwrap_or_default())?;
+        Ok((report, s.info()))
+    })
+}
+
+/// Last row a double-click on the fill handle fills down to.
+#[tauri::command(async)]
+pub fn range_fill_extent(state: State<'_, AppState>, book: String, sheet: u32, source: Rect) -> AppResult<Option<i32>> {
+    state.read(&book, |s| s.fill_extent(sheet, norm(source)))
+}
+
+/// Flash Fill (Ctrl+E) for the column of the active cell.
+#[tauri::command(async)]
+pub fn range_flash_fill(
+    state: State<'_, AppState>,
+    book: String,
+    sheet: u32,
+    row: i32,
+    col: i32,
+) -> AppResult<(FlashFillResult, WorkbookInfo)> {
+    state.with(&book, |s| {
+        let result = s.flash_fill(sheet, row, col)?;
+        Ok((result, s.info()))
+    })
+}
+
+/// Home → Fill → Series. Returns the filled range.
+#[tauri::command(async)]
+pub fn range_fill_series(
+    state: State<'_, AppState>,
+    book: String,
+    sheet: u32,
+    rect: Rect,
+    spec: SeriesSpec,
+) -> AppResult<(Rect, WorkbookInfo)> {
+    state.with(&book, |s| {
+        let filled = s.fill_series(sheet, norm(rect), &spec)?;
+        Ok((filled, s.info()))
     })
 }
 

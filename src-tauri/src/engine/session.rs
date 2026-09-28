@@ -29,8 +29,10 @@ use crate::{
 };
 
 mod features;
+mod fill;
 
 pub use features::{FilterValue, HealthReport, PivotSpec, RangeValues, SplitOptions};
+pub use fill::{FillMode, FillReport, FlashFillResult, SeriesSpec};
 
 pub type Engine = UserModel<'static>;
 
@@ -1795,23 +1797,6 @@ impl Session {
     // ------------------------------------------------------------------
     // Fill, sort, dedupe
     // ------------------------------------------------------------------
-
-    /// Fill-handle drag / Ctrl+D / Ctrl+R. `target` includes the source.
-    pub fn auto_fill(&mut self, sheet: u32, source: Rect, target: Rect) -> AppResult<()> {
-        self.check_sheet(sheet)?;
-        self.tx(true, |s, tx| {
-            if target.r2 > source.r2 || target.r1 < source.r1 {
-                let to_row = if target.r2 > source.r2 { target.r2 } else { target.r1 };
-                let r = s.model.auto_fill_rows(&area(sheet, &source), to_row);
-                Self::step(tx, r)?;
-            } else if target.c2 > source.c2 || target.c1 < source.c1 {
-                let to_col = if target.c2 > source.c2 { target.c2 } else { target.c1 };
-                let r = s.model.auto_fill_columns(&area(sheet, &source), to_col);
-                Self::step(tx, r)?;
-            }
-            Ok(())
-        })
-    }
 
     fn has_arrays(&self, sheet: u32, rect: &Rect) -> AppResult<bool> {
         let ws = self.m().workbook.worksheet(sheet)?;

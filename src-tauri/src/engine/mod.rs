@@ -3,6 +3,7 @@
 pub mod a1;
 pub mod dto;
 pub mod extras;
+pub mod flashfill;
 mod input;
 pub mod merges;
 mod meta;
@@ -12,8 +13,8 @@ pub mod styling;
 pub use input::protect_literal;
 pub use session::format_preview;
 pub use session::{
-    ClipboardPayload, DefinedNameDto, EngineConfig, FilterValue, FindOptions, FoundCell, HealthReport, PivotSpec,
-    RangeValues, Session, SortKey, SplitOptions, WorkbookStats,
+    ClipboardPayload, DefinedNameDto, EngineConfig, FillMode, FillReport, FilterValue, FlashFillResult, FindOptions, FoundCell,
+    HealthReport, PivotSpec, RangeValues, SeriesSpec, Session, SortKey, SplitOptions, WorkbookStats,
 };
 
 #[cfg(test)]
