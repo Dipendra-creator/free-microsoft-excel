@@ -1,0 +1,217 @@
+.titlebar {
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: var(--titlebar-bg);
+  position: relative;
+  z-index: 5;
+}
+
+.tb-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  min-width: 0;
+  flex: 1 1 0;
+  height: 100%;
+}
+
+.tb-logo {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.tb-logo .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.tb-title {
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 10px;
+}
+
+.tb-center {
+  flex: 0 1 380px;
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  align-items: center;
+}
+
+.tb-right {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  gap: 6px;
+}
+
+.tb-icon {
+  width: 36px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+
+.tb-icon:hover {
+  background: var(--hover);
+}
+
+.avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #4a7c2c;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 8px 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.avatar.big {
+  width: 48px;
+  height: 48px;
+  font-size: 17px;
+  margin: 0;
+}
+
+.window-controls {
+  display: flex;
+  height: 100%;
+  align-self: flex-start;
+}
+
+.wc-btn {
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+
+.wc-btn .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.wc-btn:hover {
+  background: var(--hover);
+}
+
+.wc-close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* Quick access toolbar */
+.qat {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.qat-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+
+.qat-btn:hover:not(:disabled),
+.qat-caret:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.qat-split {
+  display: flex;
+  align-items: center;
+}
+
+.qat-split .qat-btn {
+  width: 24px;
+}
+
+.qat-caret {
+  width: 12px;
+  height: 28px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+}
+
+/* Search box */
+.tb-search {
+  width: 100%;
+  max-width: 368px;
+  height: 30px;
+  border-radius: 4px;
+  background: #262626;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: var(--text-3);
+}
+
+:root[data-theme="light"] .tb-search {
+  background: #fff;
+  border-color: #d1d1d1;
+}
+
+.tb-search:focus-within {
+  border-color: var(--accent);
+}
+
+.tb-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+}
+
+.tb-search input::placeholder {
+  color: var(--text-3);
+}
+
+.search-results {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.account-card {
+  width: 280px;
+  padding: 14px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ac-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}

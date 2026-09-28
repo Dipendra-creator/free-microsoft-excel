@@ -1,0 +1,611 @@
+.ribbon {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 4;
+}
+
+.ribbon-tabs {
+  height: 34px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 10px 2px;
+  gap: 2px;
+}
+
+.ribbon-tab {
+  height: 30px;
+  padding: 0 11px;
+  font-size: 13px;
+  color: var(--text-2);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+}
+
+.ribbon-tab:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.ribbon-tab.active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ribbon-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.ribbon-tabs-spacer {
+  flex: 1;
+}
+
+.share-btn {
+  height: 26px;
+  margin-bottom: 3px;
+  padding: 0 10px;
+  border-radius: 4px;
+  background: var(--accent-btn);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.share-btn:hover {
+  background: var(--accent-btn-hover);
+}
+
+.share-panel {
+  width: 300px;
+  padding: 14px 16px !important;
+  font-size: 12.5px;
+}
+
+.share-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.ribbon-content {
+  margin: 0 6px 6px;
+  height: 98px;
+  background: var(--ribbon-bg);
+  border-radius: 8px;
+  display: flex;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.ribbon-peek {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34px;
+  z-index: 30;
+}
+
+.ribbon-peek .ribbon-content {
+  box-shadow: var(--menu-shadow);
+}
+
+.ribbon-groups {
+  flex: 1;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 30px 0 2px;
+  scrollbar-width: thin;
+}
+
+.ribbon-groups::-webkit-scrollbar {
+  height: 4px;
+}
+
+.compact .rb-small-label {
+  display: none;
+}
+
+.ribbon-collapse {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+
+.ribbon-collapse:hover {
+  background: var(--hover);
+}
+
+.rb-group {
+  display: flex;
+  flex-direction: column;
+  padding: 0 6px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.rb-group::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 6px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--border);
+}
+
+.rb-group-body {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 72px;
+}
+
+.rb-group-label {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  font-size: 11.5px;
+  position: relative;
+  white-space: nowrap;
+}
+
+.rb-launcher {
+  position: absolute;
+  right: -4px;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  border-radius: 2px;
+}
+
+.rb-launcher:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.rb-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: 1px;
+}
+
+.rb-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 24px;
+}
+
+.font-stack .rb-row:first-child {
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.rb-vsep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 3px;
+}
+
+/* Big buttons */
+.rb-big {
+  min-width: 44px;
+  height: 70px;
+  padding: 3px 4px 2px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--text);
+}
+
+.rb-big > .icon {
+  width: 32px;
+  height: 32px;
+}
+
+.rb-big-label {
+  font-size: 11.5px;
+  line-height: 14px;
+  text-align: center;
+  white-space: nowrap;
+  display: block;
+}
+
+.rb-big-label .rb-caret {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.rb-big:hover:not(:disabled),
+.rb-big.open {
+  background: var(--hover);
+}
+
+.rb-big.active {
+  background: var(--checked);
+}
+
+.rb-big:disabled .icon {
+  opacity: 0.45;
+}
+
+.rb-bigsplit {
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  height: 70px;
+  width: 46px;
+}
+
+.rb-bigsplit-main {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px 4px 0 0;
+}
+
+.rb-bigsplit-main .icon {
+  width: 32px;
+  height: 32px;
+}
+
+.rb-bigsplit-drop {
+  flex: 1;
+  border-radius: 0 0 4px 4px;
+  font-size: 11.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 13px;
+  padding-top: 1px;
+}
+
+.rb-bigsplit:hover {
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.rb-bigsplit-main:hover,
+.rb-bigsplit-drop:hover,
+.rb-bigsplit.open .rb-bigsplit-drop {
+  background: var(--hover);
+}
+
+/* Small buttons */
+.rb-small {
+  height: 24px;
+  min-width: 24px;
+  padding: 0 3px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.rb-small.with-label {
+  padding: 0 5px 0 3px;
+}
+
+.rb-small-label {
+  font-size: 12px;
+}
+
+.rb-small:hover:not(:disabled),
+.rb-small.open {
+  background: var(--hover);
+}
+
+.rb-small.active {
+  background: var(--checked);
+  box-shadow: inset 0 0 0 1px var(--checked-border);
+}
+
+.rb-small:disabled .icon {
+  opacity: 0.4;
+}
+
+.rb-caret {
+  color: var(--text-3);
+  width: 10px;
+  height: 10px;
+}
+
+.rb-split {
+  display: flex;
+  height: 24px;
+  border-radius: 3px;
+}
+
+.rb-split-main {
+  height: 24px;
+  min-width: 24px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 3px 0 0 3px;
+  white-space: nowrap;
+}
+
+.rb-split-drop {
+  width: 14px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 3px 3px 0;
+  color: var(--text-3);
+}
+
+.rb-split:hover {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.rb-split-main:hover:not(:disabled),
+.rb-split-drop:hover:not(:disabled),
+.rb-split.open .rb-split-drop {
+  background: var(--hover);
+}
+
+.rb-split.active .rb-split-main {
+  background: var(--checked);
+}
+
+.editing-stack .rb-split,
+.editing-stack .rb-small {
+  height: 23px;
+}
+
+.color-bar-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 18px;
+}
+
+.color-bar-icon .icon {
+  width: 16px;
+  height: 14px;
+  margin-top: 1px;
+}
+
+.color-bar {
+  width: 16px;
+  height: 4px;
+  margin-top: 1px;
+  border-radius: 1px;
+}
+
+/* Combos */
+.rb-combo {
+  height: 23px;
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--input-bg);
+}
+
+.rb-combo:hover,
+.rb-combo.open {
+  border-color: var(--border-strong);
+}
+
+.rb-combo input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+.rb-combo button {
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+
+.numfmt-box {
+  display: inline-block;
+  width: 120px;
+  height: 21px;
+  line-height: 19px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--input-bg);
+  text-align: left;
+}
+
+.combo-list {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 4px 0;
+  background: var(--menu-bg);
+}
+
+.combo-item {
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.combo-item:hover {
+  background: var(--menu-hover);
+}
+
+.combo-item.selected {
+  background: var(--pressed);
+}
+
+/* Styles gallery */
+.styles-group .rb-group-body {
+  align-items: flex-start;
+}
+
+.styles-gallery {
+  display: flex;
+  height: 58px;
+  margin-top: 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--input-bg);
+}
+
+.styles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 104px);
+  grid-template-rows: repeat(2, 26px);
+  gap: 2px;
+  padding: 2px;
+}
+
+.style-preview {
+  font-family: "Aptos Narrow", Calibri, sans-serif;
+  font-size: 12px;
+  text-align: left;
+  padding: 0 5px;
+  border: 1px solid #d0d0d0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.style-preview:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.style-preview.wide {
+  width: 110px;
+  height: 28px;
+}
+
+.styles-scroll {
+  width: 16px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+}
+
+.styles-scroll button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+}
+
+.styles-scroll button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.gallery-panel {
+  padding: 4px 8px 10px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 110px);
+  gap: 4px;
+  padding: 4px 0 6px;
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 66px);
+  gap: 6px;
+  padding: 4px 0 8px;
+}
+
+.table-thumb {
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-thumb:hover {
+  background: var(--menu-hover);
+  outline: 2px solid var(--accent);
+}
+
+/* Page layout / view check groups */
+.sheet-options {
+  display: flex;
+  gap: 16px;
+  padding: 2px 6px;
+}
+
+.so-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.so-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.show-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 6px;
+}
+
+.rb-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.rb-check input {
+  accent-color: var(--accent-strong);
+  margin: 0;
+}
+
+.rb-check.disabled {
+  color: var(--text-disabled);
+}
+
+.workbook-window.ribbon-collapsed .ribbon {
+  padding-bottom: 4px;
+}
