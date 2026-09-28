@@ -242,6 +242,54 @@ pub fn encode_xlsx(model: &ironcalc_base::Model) -> AppResult<Vec<u8>> {
 }
 
 impl AppState {
+    /// Titles of the open workbooks with unsaved changes.
+    pub fn unsaved_titles(&self) -> Vec<String> {
+        let sessions = self.sessions.lock().unwrap();
+        let mut titles: Vec<String> = sessions
+            .values()
+            .filter_map(|shared| {
+                let s = shared.lock().ok()?;
+                (s.dirty && !s.untouched).then(|| s.title.clone())
+            })
+            .collect();
+        titles.sort();
+        titles
+    }
+
+    /// Sheets is about to restart into an update: keep every workbook with
+    /// unsaved changes for the start screen, and treat it as clean so closing
+    /// does not keep it a second time. Returns the ids kept.
+    pub fn keep_for_restart(&self, _version: &str) -> Vec<String> {
+        let sessions: Vec<(String, SharedSession)> =
+            self.sessions.lock().unwrap().iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        let mut kept = Vec::new();
+        for (id, shared) in sessions {
+            let Ok(mut s) = shared.lock() else { continue };
+            if !s.dirty || s.untouched {
+                continue;
+            }
+            let meta = snapshot_meta(&s.title, s.location.as_ref().map(|l| l.path.to_string_lossy().to_string()));
+            let Ok(bytes) = snapshot_bytes(&s) else { continue };
+            if self.recovery.keep_for_restart(&id, &meta, &bytes).is_ok() {
+                s.dirty = false;
+                kept.push(id);
+            }
+        }
+        kept
+    }
+
+    /// The update was not installed: the workbooks are unsaved again.
+    pub fn undo_keep_for_restart(&self, ids: &[String]) {
+        for id in ids {
+            if let Ok(shared) = self.session(id) {
+                if let Ok(mut s) = shared.lock() {
+                    s.dirty = true;
+                }
+            }
+            self.recovery.forget_restart(id);
+        }
+    }
+
     /// One AutoRecover pass: snapshots every changed workbook whose last
     /// snapshot is older than the configured delay. Called every few seconds
     /// from a background thread; busy workbooks are simply skipped this time.

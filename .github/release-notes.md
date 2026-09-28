@@ -25,18 +25,14 @@ Open the `.dmg` and drag **Sheets** to **Applications**. The app is not notarize
 
 ## What's new in {{VERSION}}
 
-**AutoFill that works like Excel**
-- Dragging the fill handle shows the **AutoFill Options** button at the corner of the filled cells: switch between **Copy Cells**, **Fill Series**, **Fill Formatting Only** and **Fill Without Formatting** — and for dates **Fill Days / Weekdays / Months / Years**.
-- One number is copied, as in Excel; hold **Ctrl** while dragging (or pick Fill Series) to count 1, 2, 3…. Two or more numbers continue their trend. Dates, `Item 1`, `ID-007`, `1st`, `Q1`, month and day names continue on their own, and filling up or left counts down.
-- **Double-click the fill handle** to fill down to the end of the neighbouring data. Home → Fill → **Series…** for linear, growth and date series with a step, stop value or trend.
-- **Flash Fill** (Ctrl+E, Data tab): type one example next to your data (`John Smith` → `Smith, J.`) and Sheets fills the rest of the column.
+**In-app updates**
+- Sheets now checks for new versions. When one is out, an **Update available** button appears in the title bar — click it to see what's new, then **Update now** and **Restart to update**.
+- Updates are downloaded in the background, verified with the project's signing key and installed in one step. Workbooks with unsaved changes are kept and offered again on the start screen right after the restart.
+- Help → **Check for Updates** checks on demand; Options → *Check for new versions automatically* turns the background check off.
 
-**Paste Special** (Ctrl+Alt+V): formulas, values, formats, number formats, no borders, column widths, **Add / Subtract / Multiply / Divide**, **Skip blanks**, **Transpose** and **Paste Link**. Ctrl+Shift+V pastes values only.
+> Updating from 0.3.0 or earlier? Install this version once from the files above — from now on Sheets updates itself.
 
-**Keyboard**
-- **KeyTips**: press Alt (or F10) and type the letters shown on the ribbon — Alt, H, 1 for Bold, Alt, A, F, F for Flash Fill…
-- The rest of Excel's shortcuts: Ctrl+A (data region, then sheet), End mode, F8 Extend Selection, F4 repeat last action, Ctrl+' / Ctrl+Shift+" copy from above, Ctrl+[ go to precedents, Ctrl+. corners, Shift+F4 find next, F3 / Ctrl+F3 / Ctrl+Shift+F3 names, Ctrl+Shift+~ General format, Ctrl+Tab windows, Ctrl+Alt+= / - zoom, and more. **F1** lists them all.
-- **AutoComplete** finishes text you have already typed in the column; **Alt+↓** picks from the column's entries.
+**Also new in 0.3:** AutoFill Options (Copy Cells / Fill Series / dates by day, weekday, month, year), Ctrl+drag and double-click fill, Series dialog, **Flash Fill** (Ctrl+E), **Paste Special** with transpose and operations, **KeyTips** (Alt), the full Excel keyboard shortcut set (F1 lists them), AutoComplete and Alt+↓ pick lists.
 
 **Also in Sheets** (since 0.2): AutoRecover and crash recovery, Recover Unsaved Workbooks, version history, data-integrity guards (leading zeros, long numbers, gene names), encoding-aware CSV, AutoFilter, charts, Check Workbook, PivotTable summaries, Text to Columns, notes, links, Print / Save as PDF, Windows and macOS.
 

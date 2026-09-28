@@ -36,6 +36,7 @@ import type {
   StylePatch,
   TemplateMeta,
   TemplatePreview,
+  UpdateStatus,
   WorkbookInfo,
   WorkbookStats,
 } from "./types";
@@ -243,6 +244,13 @@ export const api = {
   versions: (path: string) => invoke<VersionItem[]>("versions_list", { path }),
   versionOpen: (file: string, title: string) => mut<WorkbookInfo>("version_open", { file, title }),
   bookWindows: () => invoke<BookWindow[]>("list_book_windows"),
+
+  // Updates
+  updateStatus: () => invoke<UpdateStatus>("update_status"),
+  updateCheck: () => invoke<UpdateStatus>("update_check"),
+  updateDownload: () => invoke<UpdateStatus>("update_download"),
+  updateInstall: () => invoke<void>("update_install"),
+  updateUnsaved: () => invoke<string[]>("update_unsaved"),
 };
 
 export function errorMessage(e: unknown): string {

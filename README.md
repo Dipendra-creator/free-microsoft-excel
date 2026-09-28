@@ -27,6 +27,13 @@ Each release has separate downloads per platform:
 | **macOS — Apple Silicon** (M1/M2/M3/M4) | `Sheets_<version>_aarch64.dmg` |
 | **macOS — Intel** | `Sheets_<version>_x64.dmg` |
 
+**Updates:** from version 0.4.0, Sheets tells you when a new version is out — an **Update
+available** button appears in the title bar; click it, then **Restart to update**. Workbooks
+with unsaved changes are kept and offered again after the restart. (Help → Check for Updates;
+turn automatic checks off in Options; the portable `.exe` updates by installing the regular version.)
+Coming from 0.3.0 or earlier? Install 0.4.0 once from
+the Releases page.
+
 The builds are not code-signed yet:
 
 * **Windows** — if SmartScreen says "Windows protected your PC", click **More info → Run anyway**.
@@ -164,6 +171,15 @@ cd .. && pnpm typecheck                                              # TypeScrip
    [`.github/release-notes.md`](.github/release-notes.md), and publishes it — creating the `vX.Y.Z`
    tag — when every build has succeeded. Pushes that don't change the version don't release anything.
 
+**In-app updates** need the update-signing key as repository secrets (Settings → Secrets and
+variables → Actions): `TAURI_SIGNING_PRIVATE_KEY` (the private key file's contents) and, if the
+key has a password, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. The matching public key is
+`plugins.updater.pubkey` in `src-tauri/tauri.conf.json`. With the secret set, each release gets
+signed update files and a `latest.json`, and installed copies update themselves; without it the
+release is still built and the app only announces it. Keep the private key safe: if it is lost,
+generate a new pair (`pnpm tauri signer generate -w ~/.tauri/sheets.key`), put the new public
+key in `tauri.conf.json`, and users install that release once by hand.
+
 ---
 
 ## Architecture
@@ -179,6 +195,7 @@ src-tauri/src
 │   ├── dto.rs         screen-ready DTOs (Excel pixels, resolved colours, style tables)
 │   └── merges.rs, styling.rs
 ├── recovery.rs      AutoRecover snapshots, crash recovery, unsaved workbooks, version history
+├── updates.rs       in-app updates: background checks, signed download/install, GitHub fallback
 ├── storage/         WorkbookStore trait + FileStore (.xlsx, .csv/.tsv), encoding detection, atomic saves
 ├── templates/       TemplateProvider trait + built-in templates
 ├── sync/            SyncBackend trait (change stream hook) + LocalOnly default

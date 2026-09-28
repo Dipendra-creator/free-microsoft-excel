@@ -34,10 +34,10 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | --- | --- |
 | Open/save `.xlsx`; open `.xlsm` (macros are not run; saved as an `.xlsx` copy, the original is never overwritten) | ✅ |
 | Open/save CSV, TSV/TXT with delimiter + encoding detection | ✅ |
-| Legacy `.xls` | 🗺️ read-only import (0.5) |
-| `.ods` (LibreOffice) | 🗺️ (0.6) |
+| Legacy `.xls` | 🗺️ read-only import (0.6) |
+| `.ods` (LibreOffice) | 🗺️ (0.7) |
 | Export as PDF (via Print → Save as PDF) | ✅ |
-| Direct "Export to PDF" without the print dialog | 🗺️ (0.5) |
+| Direct "Export to PDF" without the print dialog | 🗺️ (0.6) |
 | AutoRecover every 10 s – 5 min, crash recovery on start | ✅ |
 | Recover Unsaved Workbooks (7 days) | ✅ |
 | Local version history for every saved file | ✅ |
@@ -45,7 +45,7 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | Templates (built-in) | ✅ |
 | Recent / pinned files, drag & drop files to open | ✅ |
 | Single instance: opening a file reuses the running app | ✅ |
-| Auto-update | 🗺️ signed releases + updater (1.0) |
+| In-app updates: title-bar Update button, signed downloads, unsaved work kept across the restart | ✅ |
 
 ### Editing
 
@@ -57,12 +57,12 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | Copy/cut/paste, Paste Special (values, formulas, formats, operations, skip blanks, transpose, paste link) | ✅ |
 | Fill handle with AutoFill Options (copy / series / formats / days / months…), Ctrl+drag, double-click fill, Series dialog, Ctrl+D / Ctrl+R, Ctrl+Enter | ✅ |
 | Find & Replace (sheet or workbook), Go To | ✅ |
-| Go To Special (blanks, formulas, constants…) | 🗺️ (0.4) |
+| Go To Special (blanks, formulas, constants…) | 🗺️ (0.5) |
 | Flash Fill (Ctrl+E) | ✅ |
 | AutoComplete and Alt+↓ pick list | ✅ |
 | Excel keyboard shortcuts and KeyTips (Alt / F10) | ✅ |
-| Data validation (dropdown lists, number/date rules) | 🗺️ (0.4) |
-| Spell check | 🗺️ (0.5) |
+| Data validation (dropdown lists, number/date rules) | 🗺️ (0.5) |
+| Spell check | 🗺️ (0.6) |
 
 ### Formatting
 
@@ -72,8 +72,8 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | Number formats + Format Cells dialog | ✅ |
 | Cell styles, Format as Table gallery | ✅ |
 | Conditional formatting (rules, top/bottom, data bars, colour scales, icon sets) | ✅ |
-| Indent and text rotation | 🗺️ (0.5, needs engine support) |
-| Themes | 🗺️ (0.5) |
+| Indent and text rotation | 🗺️ (0.6, needs engine support) |
+| Themes | 🗺️ (0.6) |
 
 ### Formulas
 
@@ -83,9 +83,9 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | Defined names / Name Manager | ✅ |
 | Show formulas, Calculate Now | ✅ |
 | **Check Workbook** (errors, inconsistent formulas, totals that skip numbers, numbers as text, hidden data, volatile functions) | ✅ *(Sheets only)* |
-| Trace precedents / dependents arrows, Evaluate Formula | 🗺️ (0.5) |
-| `HYPERLINK()` function | 🗺️ (0.4, engine) |
-| Goal Seek, Data Tables, Solver | 🗺️ (0.6) |
+| Trace precedents / dependents arrows, Evaluate Formula | 🗺️ (0.6) |
+| `HYPERLINK()` function | 🗺️ (0.5, engine) |
+| Goal Seek, Data Tables, Solver | 🗺️ (0.7) |
 | Macros / VBA | ❌ not planned — a safer scripting option may come later |
 
 ### Data
@@ -94,13 +94,13 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | --- | --- |
 | Sort (quick and multi-level) | ✅ |
 | AutoFilter with value list, search, sort, clear, reapply | ✅ |
-| Number / date / text filter conditions (greater than, contains, top 10…) | 🗺️ (0.4) |
+| Number / date / text filter conditions (greater than, contains, top 10…) | 🗺️ (0.5) |
 | Remove Duplicates | ✅ |
 | Text to Columns (delimited) | ✅ |
-| Text to Columns (fixed width) | 🗺️ (0.4) |
+| Text to Columns (fixed width) | 🗺️ (0.5) |
 | PivotTable (formula-based, live values) | ✅ |
-| Refreshable PivotTables with drag-and-drop fields | 🗺️ (0.6) |
-| Freeze panes, hide/unhide, group/outline | ✅ / ✅ / 🗺️ (0.5) |
+| Refreshable PivotTables with drag-and-drop fields | 🗺️ (0.7) |
+| Freeze panes, hide/unhide, group/outline | ✅ / ✅ / 🗺️ (0.6) |
 | Import from database / web / JSON | 🗺️ (1.0, via the `WorkbookStore` / `SyncBackend` extension points) |
 
 ### Charts and objects
@@ -109,19 +109,19 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | --- | --- |
 | Column, bar, line, area, pie, doughnut, scatter charts | ✅ |
 | Charts follow data edits, skip filtered rows, move/resize, saved in the file | ✅ |
-| Charts visible in Excel (DrawingML export) | 🗺️ (0.5) |
-| Stacked / combo / secondary-axis charts, sparklines | 🗺️ (0.5) |
-| Pictures, shapes, text boxes | 🗺️ (0.5) |
+| Charts visible in Excel (DrawingML export) | 🗺️ (0.6) |
+| Stacked / combo / secondary-axis charts, sparklines | 🗺️ (0.6) |
+| Pictures, shapes, text boxes | 🗺️ (0.6) |
 
 ### Review and collaboration
 
 | Feature | Status |
 | --- | --- |
 | Cell notes (Excel comments are imported) | ✅ |
-| Notes visible in Excel (xlsx comment export) | 🗺️ (0.4) |
+| Notes visible in Excel (xlsx comment export) | 🗺️ (0.5) |
 | Links in cells (Ctrl+click to open) | ✅ |
 | Workbook statistics | ✅ |
-| Protect sheet / workbook | 🗺️ (0.4) |
+| Protect sheet / workbook | 🗺️ (0.5) |
 | Co-authoring and cloud sync | 🗺️ (1.0 — hooks already in `sync::SyncBackend`) |
 
 ### View, print and platform
@@ -131,12 +131,12 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 | Zoom, gridlines, headings, formula bar, collapsible ribbon | ✅ |
 | Command search (Alt+Q) | ✅ |
 | Print active sheet / selection / workbook, orientation, fit to width, gridlines, headings | ✅ |
-| Margins, headers/footers, print area, page break preview | 🗺️ (0.5) |
+| Margins, headers/footers, print area, page break preview | 🗺️ (0.6) |
 | Multiple windows, Switch Windows | ✅ |
 | Dark and light themes | ✅ |
 | Windows 10/11 (x64) | ✅ |
 | macOS 10.15+ (Apple Silicon and Intel) | ✅ |
-| Linux (AppImage / .deb) | 🗺️ (0.4) |
+| Linux (AppImage / .deb) | 🗺️ (0.5) |
 | Code signing (Windows) and notarization (macOS) | 🗺️ (1.0) |
 | Localisation (UI languages, locale-aware number parsing) | 🗺️ (1.0) |
 
@@ -144,7 +144,10 @@ Legend: ✅ available · 🟡 partial · 🗺️ planned (target release in brac
 
 ## Release plan
 
-### 0.3 — "Excel muscle memory" (current)
+### 0.4 — "Always current" (current)
+In-app updates with signed downloads; unsaved work survives the update restart.
+
+### 0.3 — "Excel muscle memory"
 AutoFill Options, series and date fills, Flash Fill, Paste Special with
 operations and transpose, KeyTips, the full Excel keyboard shortcut set,
 AutoComplete and pick lists.
@@ -154,21 +157,21 @@ AutoRecover, unsaved-workbook recovery, version history, data-integrity guards,
 encoding-aware CSV, AutoFilter, charts, notes, links, Text to Columns,
 PivotTable summaries, Check Workbook, printing / PDF, macOS support.
 
-### 0.4 — "Data tools"
+### 0.5 — "Data tools"
 Data validation with dropdown lists, advanced filter conditions, Go To Special,
 fixed-width Text to Columns, notes exported as real Excel comments, sheet
 protection, Linux packages, warnings when a paste would run past the sheet edge.
 
-### 0.5 — "Presentation"
+### 0.6 — "Presentation"
 Charts saved as native Excel charts, more chart types, pictures and shapes,
 page setup (margins, headers/footers, print area), direct PDF export,
 indent/rotation, themes, outline/grouping, formula auditing arrows, spell check.
 
-### 0.6 — "Analysis"
+### 0.7 — "Analysis"
 Refreshable PivotTables, Goal Seek, Data Tables, Solver, `.ods`.
 
 ### 1.0 — "Connected"
-Signed and notarized builds with auto-update, database-backed workbooks,
+Code-signed and notarized builds, database-backed workbooks,
 co-authoring, localisation.
 
 ---

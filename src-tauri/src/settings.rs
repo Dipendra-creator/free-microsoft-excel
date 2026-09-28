@@ -25,6 +25,10 @@ pub struct Settings {
     pub autorecover_seconds: u32,
     /// Previous versions kept per file when saving (0 = off).
     pub keep_versions: u32,
+    /// Look for a new version of Sheets in the background.
+    pub check_updates: bool,
+    /// Version that last ran (to say "Updated to …" once after an update).
+    pub last_version: String,
 }
 
 impl Default for Settings {
@@ -41,6 +45,8 @@ impl Default for Settings {
             csv_bom: true,
             autorecover_seconds: 30,
             keep_versions: 20,
+            check_updates: true,
+            last_version: String::new(),
         }
     }
 }

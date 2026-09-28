@@ -2,6 +2,28 @@
 
 All notable changes to Sheets. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.4.0] — 2026-09-28
+
+### In-app updates
+- Sheets checks for a new version shortly after it starts and every 6 hours.
+  When one is out, an **Update available** button appears in the title bar of
+  every window, with the release notes one click away.
+- **Update now** downloads the update in the background (progress shows in the
+  button) and verifies its signature; **Restart to update** installs it.
+  Workbooks with unsaved changes are kept and offered again on the start
+  screen right after the restart.
+- After an update the title bar says **Updated to x.y.z** once, with a link to
+  what's new.
+- Help → **Check for Updates**, File → Account → **Sheets Updates**, and
+  Options → *Check for new versions automatically* (on by default).
+- Releases without signed update files are still announced; the button then
+  opens the download page.
+- Release pipeline: signs the Windows and macOS update files with the project's
+  update key and publishes `latest.json` with each release.
+
+Note: Sheets 0.3.0 and earlier have no updater — install 0.4.0 once from the
+Releases page; later versions then update themselves.
+
 ## [0.3.0] — 2026-09-28
 
 ### AutoFill
