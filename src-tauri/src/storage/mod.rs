@@ -15,7 +15,7 @@ use crate::{
     error::{AppError, AppResult},
 };
 
-pub use file::FileStore;
+pub use file::{write_atomic, FileStore};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FileFormat {
@@ -72,6 +72,26 @@ impl Location {
         Ok(Location { path, format })
     }
 
+    /// A location Sheets may write to. Macro-enabled workbooks are refused:
+    /// Sheets does not keep VBA projects, and writing a macro-free workbook
+    /// under an `.xlsm` name makes Excel reject the file.
+    pub fn for_save(path: impl Into<PathBuf>) -> AppResult<Location> {
+        let location = Location::from_path(path)?;
+        if location.is_macro_enabled() {
+            return Err(AppError::Unsupported(
+                "Sheets doesn't keep macros, so it can't save macro-enabled workbooks (.xlsm). Save it as an Excel Workbook (.xlsx) instead.".into(),
+            ));
+        }
+        Ok(location)
+    }
+
+    pub fn is_macro_enabled(&self) -> bool {
+        self.path
+            .extension()
+            .map(|e| e.eq_ignore_ascii_case("xlsm"))
+            .unwrap_or(false)
+    }
+
     pub fn display_name(&self) -> String {
         self.path
             .file_stem()
@@ -80,9 +100,22 @@ impl Location {
     }
 }
 
+/// A loaded model plus a warning when not everything could be loaded.
+pub struct Loaded {
+    pub model: Model<'static>,
+    pub warning: Option<String>,
+}
+
 pub trait WorkbookStore: Send + Sync {
     /// Loads a model from a location.
     fn load(&self, location: &Location, config: &EngineConfig) -> AppResult<Model<'static>>;
+    /// Like `load`, but reports data that could not be loaded.
+    fn load_checked(&self, location: &Location, config: &EngineConfig) -> AppResult<Loaded> {
+        Ok(Loaded {
+            model: self.load(location, config)?,
+            warning: None,
+        })
+    }
     /// Persists the session at a location.
-    fn save(&self, session: &Session, location: &Location) -> AppResult<()>;
+    fn save(&self, session: &Session, location: &Location, config: &EngineConfig) -> AppResult<()>;
 }

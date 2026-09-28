@@ -318,7 +318,76 @@ export class GridRenderer {
     segs.sort((a, b) => a.weight - b.weight);
     for (const s of segs) this.drawSegment(s);
 
+    // 7. Note indicators (red triangle in the top-right corner)
+    for (const [r, c] of ctl.layout?.notes ?? []) {
+      if (r < r1 || r > r2 || c < c1 || c > c2 || rh(r) === 0 || cw(c) === 0) continue;
+      const m = mergeOf(r, c);
+      const box = m ? ctl.rangeBox(m) : { x: X(c), y: Y(r), w: cw(c), h: rh(r) };
+      const size = Math.max(4, Math.round(6 * ctl.zoom * this.dpr));
+      const right = d(box.x + box.w) - 1;
+      const top = d(box.y);
+      ctx.fillStyle = "#E0463C";
+      ctx.beginPath();
+      ctx.moveTo(right - size, top);
+      ctx.lineTo(right, top);
+      ctx.lineTo(right, top + size);
+      ctx.closePath();
+      ctx.fill();
+    }
+
     ctx.restore();
+  }
+
+  /** Dropdown buttons of the AutoFilter header row. */
+  private drawFilterButtons(p: Pane) {
+    const ctl = this.ctl;
+    const f = ctl.filter;
+    if (!f) return;
+    const ctx = this.ctx;
+    const d = (v: number) => this.d(v);
+    const r = f.r1;
+    if (r < p.rows[0] || r > p.rows[1]) return;
+    const h = ctl.rows.size(r);
+    if (h === 0) return;
+    for (let c = Math.max(f.c1, p.cols[0]); c <= Math.min(f.c2, p.cols[1]); c++) {
+      const box = filterButtonBox(ctl, r, c);
+      if (!box) continue;
+      const active = f.active.includes(c);
+      const x = d(box.x);
+      const y = d(box.y);
+      const w = d(box.x + box.w) - x;
+      const hh = d(box.y + box.h) - y;
+      ctx.fillStyle = active ? "#E8F1FB" : "#F7F7F7";
+      ctx.fillRect(x, y, w, hh);
+      ctx.fillStyle = active ? "#2B7CD3" : "#ABABAB";
+      ctx.fillRect(x, y, w, 1);
+      ctx.fillRect(x, y + hh - 1, w, 1);
+      ctx.fillRect(x, y, 1, hh);
+      ctx.fillRect(x + w - 1, y, 1, hh);
+      ctx.fillStyle = active ? "#2B7CD3" : "#444444";
+      const cx = x + w / 2;
+      const cy = y + hh / 2;
+      const a = Math.max(2, Math.round(w * 0.18));
+      if (active) {
+        // Funnel
+        ctx.beginPath();
+        ctx.moveTo(cx - a * 1.6, cy - a * 1.2);
+        ctx.lineTo(cx + a * 1.6, cy - a * 1.2);
+        ctx.lineTo(cx + a * 0.4, cy + a * 0.2);
+        ctx.lineTo(cx + a * 0.4, cy + a * 1.4);
+        ctx.lineTo(cx - a * 0.4, cy + a * 1.0);
+        ctx.lineTo(cx - a * 0.4, cy + a * 0.2);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(cx - a * 1.3, cy - a * 0.6);
+        ctx.lineTo(cx + a * 1.3, cy - a * 0.6);
+        ctx.lineTo(cx, cy + a * 0.8);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
   }
 
   private drawSegment(s: Segment) {
@@ -729,6 +798,8 @@ export class GridRenderer {
       }
     }
 
+    this.drawFilterButtons(p);
+
     // Formula reference highlights
     for (const ref of ctl.editRefs()) {
       const rr = clampToPane(ref.rect);
@@ -870,7 +941,9 @@ export class GridRenderer {
     }
     void colPanes;
 
-    // Row header strip
+    // Row header strip (rows of an active filter are numbered in blue, like Excel)
+    const f = ctl.filter;
+    const filtered = (r: number) => !!f && f.active.length > 0 && r > f.r1 && r <= f.r2;
     const drawnRows = new Set<string>();
     for (const p of panes) {
       const key = `${p.rows[0]}-${p.rows[1]}-${p.clip.y}`;
@@ -894,7 +967,7 @@ export class GridRenderer {
         ctx.fillStyle = t.headerLine;
         ctx.fillRect(0, d(y + h) - 1, d(hw), 1);
         if (ctl.rows.hiddenBetween(r, ctl.rows.next(r))) ctx.fillRect(0, d(y + h) - 2, d(hw), 2);
-        ctx.fillStyle = inSel ? (fullRows ? t.headerFullText : t.headerSelText) : t.headerText;
+        ctx.fillStyle = inSel ? (fullRows ? t.headerFullText : t.headerSelText) : filtered(r) ? "#4C9BE8" : t.headerText;
         if (h > 8 * ctl.zoom) ctx.fillText(String(r), d(hw / 2), d(y + h / 2) + 1);
       }
       ctx.restore();
@@ -921,6 +994,15 @@ export class GridRenderer {
     ctx.fill();
     ctx.textAlign = "start";
   }
+}
+
+/** Screen box (css px) of the filter button in header cell (r, c). */
+export function filterButtonBox(ctl: WorkbookController, r: number, c: number): { x: number; y: number; w: number; h: number } | null {
+  const cw = ctl.cols.size(c);
+  const rh = ctl.rows.size(r);
+  if (cw === 0 || rh === 0) return null;
+  const size = Math.max(9, Math.min(17 * ctl.zoom, rh - 3, cw - 2));
+  return { x: ctl.colX(c) + cw - size - 2, y: ctl.rowY(r) + rh - size - 2, w: size, h: size };
 }
 
 function dashed(a: number, b: number, draw: (a: number, b: number) => void, pattern: number[]) {

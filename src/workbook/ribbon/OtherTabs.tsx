@@ -4,9 +4,14 @@ import { isFullCols, isFullRows } from "../../lib/a1";
 import type { WorkbookController } from "../controller";
 import { useCtl } from "../hooks";
 import { autoSumMenu, sortMenu } from "../menus";
+import { CHART_TYPES } from "../charts/ChartLayer";
 import { BigButton, CheckItem, RibbonGroup, SmallButton, SplitButton, Stack } from "./controls";
 
 const soon = "Coming soon";
+
+function chartItems(ctl: WorkbookController): MenuItem[] {
+  return CHART_TYPES.map((t) => ({ label: `${t.label} Chart`, icon: t.icon, onClick: () => ctl.insertChart(t.kind) }));
+}
 
 function fnMenu(ctl: WorkbookController, category: string): MenuItem[] {
   return FUNCTIONS.filter((f) => f.category === category).map((f) => ({
@@ -19,20 +24,30 @@ export function InsertTab({ ctl }: { ctl: WorkbookController }) {
   return (
     <>
       <RibbonGroup label="Tables">
-        <BigButton icon="pivot" label={"PivotTable"} disabled title={soon} />
+        <BigButton icon="pivot" label={"PivotTable"} onClick={() => ctl.ui?.dialog("pivot")} title="Summarize data with a live, formula-based PivotTable on a new sheet" />
         <BigButton icon="table" label="Table" onClick={() => ctl.formatAsTable()} title="Format the selected range as a table (Ctrl+T)" />
       </RibbonGroup>
       <RibbonGroup label="Illustrations">
         <BigButton icon="pictures" label="Pictures" disabled title={soon} />
       </RibbonGroup>
       <RibbonGroup label="Charts">
-        <BigButton icon="charts" label={"Recommended\nCharts"} disabled title={soon} />
+        <BigButton icon="charts" label={"Recommended\nCharts"} onClick={() => ctl.insertChart("column")} title="Insert a chart of the selected data (Alt+F1)" />
+        <Stack>
+          <SmallButton icon="chartColumn" title="Insert Column or Bar Chart" dropdown={chartItems(ctl).slice(0, 2)} />
+          <SmallButton icon="chartLine" title="Insert Line or Area Chart" dropdown={chartItems(ctl).slice(2, 4)} />
+          <SmallButton icon="chartPie" title="Insert Pie or Doughnut Chart" dropdown={chartItems(ctl).slice(4, 6)} />
+        </Stack>
+        <Stack>
+          <SmallButton icon="chartScatter" title="Insert Scatter (X, Y) Chart" onClick={() => ctl.insertChart("scatter")} />
+          <SmallButton icon="chartBar" title="Insert Bar Chart" onClick={() => ctl.insertChart("bar")} />
+          <SmallButton icon="chartArea" title="Insert Area Chart" onClick={() => ctl.insertChart("area")} />
+        </Stack>
       </RibbonGroup>
       <RibbonGroup label="Links">
-        <BigButton icon="link" label="Link" disabled title={soon} />
+        <BigButton icon="link" label="Link" onClick={() => ctl.ui?.dialog("link")} title="Insert Link (Ctrl+K)" />
       </RibbonGroup>
-      <RibbonGroup label="Comments">
-        <BigButton icon="comment" label="Comment" disabled title={soon} />
+      <RibbonGroup label="Notes">
+        <BigButton icon="comment" label="Note" onClick={() => ctl.ui?.dialog("note")} title="New Note (Shift+F2)" />
       </RibbonGroup>
       <RibbonGroup label="Text">
         <BigButton icon="textbox" label={"Text\nBox"} disabled title={soon} />
@@ -59,17 +74,13 @@ export function PageLayoutTab({ ctl }: { ctl: WorkbookController }) {
         <BigButton icon="themes" label="Themes" disabled title={soon} />
       </RibbonGroup>
       <RibbonGroup label="Page Setup">
-        <BigButton icon="margins" label="Margins" disabled title={soon} />
-        <BigButton icon="orientationPage" label="Orientation" disabled title={soon} />
-        <BigButton icon="size" label="Size" disabled title={soon} />
-        <BigButton icon="print" label={"Print\nArea"} disabled title={soon} />
+        <BigButton icon="print" label={"Print /\nPDF"} onClick={() => ctl.ui?.backstage("print")} title="Print or save as PDF (Ctrl+P)" />
       </RibbonGroup>
       <RibbonGroup label="Sheet Options">
         <div className="sheet-options">
           <div className="so-col">
             <div className="so-title">Gridlines</div>
             <CheckItem label="View" checked={s.grid} onChange={(v) => ctl.setGridLines(v)} />
-            <CheckItem label="Print" checked={false} disabled onChange={() => {}} />
           </div>
           <div className="so-col">
             <div className="so-title">Headings</div>
@@ -81,7 +92,6 @@ export function PageLayoutTab({ ctl }: { ctl: WorkbookController }) {
                 ctl.emit();
               }}
             />
-            <CheckItem label="Print" checked={false} disabled onChange={() => {}} />
           </div>
         </div>
       </RibbonGroup>
@@ -119,6 +129,7 @@ export function FormulasTab({ ctl }: { ctl: WorkbookController }) {
       <RibbonGroup label="Formula Auditing">
         <Stack>
           <SmallButton icon="showFormulas" label="Show Formulas" active={showFormulas} onClick={() => ctl.toggleShowFormulas()} />
+          <SmallButton icon="health" label="Check Workbook" onClick={() => ctl.ui?.dialog("healthCheck")} title="Find formula errors, inconsistent formulas, totals that skip numbers and more" />
         </Stack>
       </RibbonGroup>
       <RibbonGroup label="Calculation">
@@ -129,6 +140,7 @@ export function FormulasTab({ ctl }: { ctl: WorkbookController }) {
 }
 
 export function DataTab({ ctl }: { ctl: WorkbookController }) {
+  const filter = useCtl(ctl, (c) => c.filter);
   return (
     <>
       <RibbonGroup label="Get & Transform Data">
@@ -144,11 +156,16 @@ export function DataTab({ ctl }: { ctl: WorkbookController }) {
           <SmallButton icon="sortZA" title="Sort Z to A" onClick={() => ctl.sort(false)} />
         </Stack>
         <BigButton icon="sort" label="Sort" onClick={() => ctl.ui?.dialog("sort")} />
-        <BigButton icon="filter" label="Filter" disabled title={soon} />
+        <BigButton icon="filter" label="Filter" active={!!filter} onClick={() => ctl.toggleFilter()} title="Filter (Ctrl+Shift+L)" />
+        <Stack>
+          <SmallButton icon="clear" label="Clear" disabled={!filter?.active.length} onClick={() => ctl.clearFilter()} />
+          <SmallButton icon="redo" label="Reapply" disabled={!filter} onClick={() => ctl.reapplyFilter()} />
+        </Stack>
       </RibbonGroup>
       <RibbonGroup label="Data Tools">
-        <BigButton icon="textToColumns" label={"Text to\nColumns"} disabled title={soon} />
+        <BigButton icon="textToColumns" label={"Text to\nColumns"} onClick={() => ctl.ui?.dialog("textToColumns")} />
         <BigButton icon="removeDuplicates" label={"Remove\nDuplicates"} onClick={() => ctl.ui?.dialog("removeDuplicates")} />
+        <BigButton icon="pivot" label={"Summarize\n(Pivot)"} onClick={() => ctl.ui?.dialog("pivot")} />
       </RibbonGroup>
       <RibbonGroup label="Sort">
         <SplitButton icon="sortCustom" label="Sort" onClick={() => ctl.ui?.dialog("sort")} dropdown={sortMenu(ctl)} />
@@ -158,17 +175,33 @@ export function DataTab({ ctl }: { ctl: WorkbookController }) {
 }
 
 export function ReviewTab({ ctl }: { ctl: WorkbookController }) {
+  const { hasNote, noteCount, showAll } = useCtl(ctl, (c) => ({
+    hasNote: c.hasNote(c.sel.active.r, c.sel.active.c),
+    noteCount: c.layout?.notes.length ?? 0,
+    showAll: c.showAllNotes,
+  }));
   return (
     <>
       <RibbonGroup label="Proofing">
-        <BigButton icon="spelling" label="Spelling" disabled title={soon} />
+        <BigButton icon="health" label={"Check\nWorkbook"} onClick={() => ctl.ui?.dialog("healthCheck")} title="Find formula errors, inconsistent formulas, totals that skip numbers, numbers stored as text and hidden data" />
         <BigButton icon="stats" label={"Workbook\nStatistics"} onClick={() => ctl.ui?.dialog("stats")} />
       </RibbonGroup>
-      <RibbonGroup label="Accessibility">
-        <BigButton icon="accessibility" label={"Check\nAccessibility"} disabled title={soon} />
-      </RibbonGroup>
-      <RibbonGroup label="Comments">
-        <BigButton icon="comment" label={"New\nComment"} disabled title={soon} />
+      <RibbonGroup label="Notes">
+        <BigButton icon="comment" label={hasNote ? "Edit\nNote" : "New\nNote"} onClick={() => ctl.ui?.dialog("note")} title="Shift+F2" />
+        <Stack>
+          <SmallButton icon="chevronLeft" label="Previous" disabled={!noteCount} onClick={() => ctl.nextNote(-1)} />
+          <SmallButton icon="chevronRight" label="Next" disabled={!noteCount} onClick={() => ctl.nextNote(1)} />
+          <SmallButton
+            icon="comment"
+            label="Show All Notes"
+            active={showAll}
+            onClick={() => {
+              ctl.showAllNotes = !ctl.showAllNotes;
+              ctl.emit();
+            }}
+          />
+        </Stack>
+        <BigButton icon="delete" label={"Delete\nNotes"} disabled={!noteCount} onClick={() => ctl.deleteNotes()} title="Delete the notes in the selected cells" />
       </RibbonGroup>
       <RibbonGroup label="Protect">
         <BigButton icon="protect" label={"Protect\nSheet"} disabled title={soon} />
@@ -243,8 +276,7 @@ export function ViewTab({ ctl }: { ctl: WorkbookController }) {
           ]}
           largeMenu
         />
-        <BigButton icon="newWindow" label={"New\nWindow"} disabled title={soon} />
-        <BigButton icon="switchWindows" label={"Switch\nWindows"} disabled title={soon} />
+        <BigButton icon="switchWindows" label={"Switch\nWindows"} onClick={() => ctl.ui?.dialog("switchWindows")} />
       </RibbonGroup>
     </>
   );

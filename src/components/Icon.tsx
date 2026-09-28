@@ -831,6 +831,75 @@ const small: Record<string, Draw> = {
     </>
   ),
   eraser: () => <path d="M9 2.5l4.5 4.5-6 6H4.5L2.5 11zM7.5 13h6" {...s} />,
+  chartColumn: () => (
+    <>
+      <path d="M1.5 14.5h13" {...s} />
+      <rect x="2.5" y="8" width="2.6" height="6" fill={B} />
+      <rect x="6.7" y="4" width="2.6" height="10" fill={O} />
+      <rect x="10.9" y="6" width="2.6" height="8" fill={G} />
+    </>
+  ),
+  chartBar: () => (
+    <>
+      <path d="M1.5 1.5v13" {...s} />
+      <rect x="2" y="2.5" width="8" height="2.6" fill={B} />
+      <rect x="2" y="6.7" width="12" height="2.6" fill={O} />
+      <rect x="2" y="10.9" width="6" height="2.6" fill={G} />
+    </>
+  ),
+  chartLine: () => (
+    <>
+      <path d="M1.5 14.5h13M1.5 1.5v13" {...s} />
+      <path d="M2.5 11l3.5-4 3 2.5 4.5-6" fill="none" stroke={B} strokeWidth="1.4" strokeLinejoin="round" />
+    </>
+  ),
+  chartArea: () => (
+    <>
+      <path d="M1.5 14.5h13" {...s} />
+      <path d="M1.5 14V9l4-4 3.5 3 5.5-5v11z" fill={B} fillOpacity="0.75" />
+    </>
+  ),
+  chartPie: () => (
+    <>
+      <path d="M8 8V1.5A6.5 6.5 0 1 1 1.6 9.2z" fill={B} />
+      <path d="M7 7V1.6A6.5 6.5 0 0 0 1.5 7z" fill={O} />
+    </>
+  ),
+  chartDoughnut: () => (
+    <>
+      <circle cx="8" cy="8" r="5" fill="none" stroke={B} strokeWidth="3" />
+      <path d="M8 3a5 5 0 0 1 5 5" fill="none" stroke={O} strokeWidth="3" />
+    </>
+  ),
+  chartScatter: () => (
+    <>
+      <path d="M1.5 14.5h13M1.5 1.5v13" {...s} />
+      <circle cx="4.5" cy="10.5" r="1.2" fill={B} />
+      <circle cx="7" cy="7.5" r="1.2" fill={B} />
+      <circle cx="10" cy="8.5" r="1.2" fill={O} />
+      <circle cx="12" cy="4" r="1.2" fill={O} />
+    </>
+  ),
+  transpose: () => <path d="M3 5.5h8l-2-2M13 10.5H5l2 2M11 5.5v6M5 10.5v-6" {...s} />,
+  list: () => <path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.5M2.5 8h.5M2.5 12h.5" {...s} />,
+  health: () => (
+    <>
+      <path d="M8 1.5l5.5 2v4.2c0 3.2-2.4 5.6-5.5 6.8-3.1-1.2-5.5-3.6-5.5-6.8V3.5z" fill="none" stroke={G} strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M5.3 8.2l1.9 1.9 3.6-3.8" fill="none" stroke={G} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  recover: () => (
+    <>
+      <path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2M4.8 2.3v2.5h2.5" {...s} />
+      <path d="M8 5.5V8l2 1.5" {...s} />
+    </>
+  ),
+  history: () => (
+    <>
+      <circle cx="8" cy="8" r="6" {...s} />
+      <path d="M8 4.5V8l2.5 1.5" {...s} />
+    </>
+  ),
 };
 
 const large: Record<string, Draw> = {

@@ -1,4 +1,5 @@
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -97,12 +98,13 @@ export default function App() {
         const res = await api.openWorkbook(path);
         await show(res.info, res.alreadyOpen);
         refreshRecent();
+        if (res.warning) ask(APP_NAME, res.warning, [{ label: "OK", value: "ok", primary: true }], "warning");
       } catch (e) {
         error(errorMessage(e));
         refreshRecent();
       }
     },
-    [show, error, refreshRecent],
+    [show, error, refreshRecent, ask],
   );
 
   const openPathRef = useRef(openPath);
@@ -154,7 +156,9 @@ export default function App() {
         } else if (label.startsWith("book-")) {
           initial = await api.info(label.slice(5));
         } else if (appInfo.startupFile) {
-          initial = (await api.openWorkbook(appInfo.startupFile)).info;
+          const res = await api.openWorkbook(appInfo.startupFile);
+          initial = res.info;
+          if (res.warning) ask(APP_NAME, res.warning, [{ label: "OK", value: "ok", primary: true }], "warning");
         } else if (!appInfo.settings.showStartScreen) {
           initial = await api.newWorkbook();
         }
@@ -171,7 +175,8 @@ export default function App() {
     // Block the browser context menu / reload shortcuts in production
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "F5" && !e.ctrlKey) e.preventDefault();
-      if ((e.ctrlKey && e.key.toLowerCase() === "r") || (e.ctrlKey && e.key.toLowerCase() === "p")) e.preventDefault();
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && (e.key.toLowerCase() === "r" || e.key.toLowerCase() === "p")) e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -189,6 +194,16 @@ export default function App() {
         const files = event.payload.paths.filter((p) => /\.(xlsx|xlsm|csv|tsv|txt)$/i.test(p));
         files.forEach((p) => openPathRef.current(p));
       })
+      .then((u) => (unlisten = u))
+      .catch(() => {});
+    return () => unlisten?.();
+  }, []);
+
+  // Files opened from the OS while the app runs (Finder / Explorer / Dock)
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    getCurrentWebviewWindow()
+      .listen<string>("open-file", (event) => openPathRef.current(event.payload))
       .then((u) => (unlisten = u))
       .catch(() => {});
     return () => unlisten?.();
@@ -214,6 +229,7 @@ export default function App() {
             templates,
             current: book,
             newWorkbook,
+            showBook: (wb: WorkbookInfo) => show(wb, false),
             openPath,
             browse,
             ask,
@@ -225,7 +241,7 @@ export default function App() {
             openOptions: () => setOptions(true),
           }
         : null,
-    [info, settings, recent, templates, book, saveSettings, refreshRecent, newWorkbook, openPath, browse, ask, error],
+    [info, settings, recent, templates, book, saveSettings, refreshRecent, newWorkbook, show, openPath, browse, ask, error],
   );
 
   if (fatal) {

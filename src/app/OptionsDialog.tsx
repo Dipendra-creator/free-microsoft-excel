@@ -72,6 +72,36 @@ export function OptionsDialog({ settings, onSave, onClose }: { settings: Setting
           <input type="checkbox" checked={s.showStartScreen} onChange={(e) => setS({ ...s, showStartScreen: e.target.checked })} />
           Show the Start screen when this application starts
         </label>
+        <h3>Data integrity</h3>
+        <label className="fc-row check">
+          <input type="checkbox" checked={s.preserveLiterals} onChange={(e) => setS({ ...s, preserveLiterals: e.target.checked })} />
+          Keep leading zeros and numbers longer than 15 digits exactly as typed, pasted or imported (IDs, ZIP codes, card numbers)
+        </label>
+        <label className="fc-row check">
+          <input type="checkbox" checked={s.csvBom} onChange={(e) => setS({ ...s, csvBom: e.target.checked })} />
+          Save CSV files as UTF-8 with a byte order mark (Excel opens accents and non-Latin text correctly)
+        </label>
+        <h3>Save</h3>
+        <label className="fc-row">
+          <span className="lbl">Save AutoRecover information every:</span>
+          <select value={String(s.autorecoverSeconds)} onChange={(e) => setS({ ...s, autorecoverSeconds: Number(e.target.value) })}>
+            <option value="10">10 seconds</option>
+            <option value="30">30 seconds</option>
+            <option value="60">1 minute</option>
+            <option value="300">5 minutes</option>
+            <option value="0">Off (not recommended)</option>
+          </select>
+        </label>
+        <label className="fc-row">
+          <span className="lbl">Previous versions kept per file:</span>
+          <input
+            type="number"
+            min={0}
+            max={200}
+            value={s.keepVersions}
+            onChange={(e) => setS({ ...s, keepVersions: Math.max(0, Math.min(200, Number(e.target.value) || 0)) })}
+          />
+        </label>
       </div>
     </Dialog>
   );

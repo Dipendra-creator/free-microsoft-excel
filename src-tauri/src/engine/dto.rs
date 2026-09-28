@@ -280,6 +280,23 @@ pub struct SheetLayout {
     /// `[firstColumn, lastColumn, styleIndex]` column-level formats.
     pub col_styles: Vec<(i32, i32, u32)>,
     pub styles: Vec<StyleDto>,
+    /// `[row, col]` of cells with a note (red corner indicator).
+    pub notes: Vec<[i32; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filter: Option<FilterDto>,
+    pub charts: Vec<super::extras::ChartSpec>,
+}
+
+/// AutoFilter buttons shown on the header row.
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterDto {
+    pub r1: i32,
+    pub c1: i32,
+    pub r2: i32,
+    pub c2: i32,
+    /// Columns with active criteria.
+    pub active: Vec<i32>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -300,6 +317,9 @@ pub struct WorkbookInfo {
     pub title: String,
     pub path: Option<String>,
     pub format: Option<String>,
+    /// Original file of a workbook that must be saved elsewhere (.xlsm).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_path: Option<String>,
     pub dirty: bool,
     pub untouched: bool,
     pub sheets: Vec<SheetInfo>,
@@ -326,6 +346,8 @@ pub struct CellInfo {
     /// Anchor `[row, col]` if the cell is part of a spilled / array range.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub array_anchor: Option<[i32; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<super::extras::Note>,
 }
 
 #[derive(Serialize, Debug, Default)]

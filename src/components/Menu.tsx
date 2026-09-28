@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
 import { Popup, type Anchor } from "./Popup";
+import { keyLabel } from "../lib/platform";
 
 export interface MenuItem {
   id?: string;
@@ -142,7 +143,7 @@ export function MenuList({
               {it.label}
               {it.description && <span className="menu-desc">{it.description}</span>}
             </span>
-            {it.shortcut && <span className="menu-shortcut">{it.shortcut}</span>}
+            {it.shortcut && <span className="menu-shortcut">{keyLabel(it.shortcut)}</span>}
             {hasSub && (
               <span className="menu-arrow">
                 <Icon name="caretRight" size={12} />

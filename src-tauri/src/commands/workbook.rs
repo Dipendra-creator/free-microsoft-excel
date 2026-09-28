@@ -16,9 +16,12 @@ pub struct OpenResult {
     pub info: WorkbookInfo,
     /// True when the file was already open (the frontend should focus it).
     pub already_open: bool,
+    /// Shown to the user after opening (e.g. the file didn't fit in a sheet).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
 }
 
-fn new_id() -> String {
+pub(crate) fn new_id() -> String {
     uuid::Uuid::new_v4().simple().to_string()
 }
 
@@ -58,22 +61,38 @@ pub fn workbook_open(state: State<'_, AppState>, path: String) -> AppResult<Open
     if let Some(id) = state.find_by_path(&path) {
         let info = state.read(&id, |s| Ok(s.info()))?;
         state.recent.lock().unwrap().touch(&path);
-        return Ok(OpenResult { info, already_open: true });
+        return Ok(OpenResult { info, already_open: true, warning: None });
     }
     let location = Location::from_path(&path)?;
     let config = state.config();
-    let model = state.store.load(&location, &config)?;
+    let loaded = state.store.load_checked(&location, &config)?;
+    let (model, warning) = (loaded.model, loaded.warning);
     let title = location.display_name();
-    let session = Session::new(new_id(), title, model, Some(location));
+    // Macro-enabled workbooks (macros would be lost) and files that were not
+    // loaded completely are never overwritten: the first save asks for a new file.
+    let session = if location.is_macro_enabled() || warning.is_some() {
+        let mut s = Session::new(new_id(), title, model, None);
+        s.source_path = Some(path.clone());
+        s
+    } else {
+        Session::new(new_id(), title, model, Some(location))
+    };
     let info = session.info();
     state.insert(session);
     state.recent.lock().unwrap().touch(&path);
-    Ok(OpenResult { info, already_open: false })
+    Ok(OpenResult { info, already_open: false, warning })
 }
 
 #[tauri::command(async)]
 pub fn workbook_info(state: State<'_, AppState>, book: String) -> AppResult<WorkbookInfo> {
     state.read(&book, |s| Ok(s.info()))
+}
+
+/// Keeps the file's previous content in the version history, then writes.
+fn save_with_history(state: &AppState, s: &Session, location: &Location) -> AppResult<()> {
+    let keep = state.settings.lock().unwrap().value.keep_versions as usize;
+    state.versions.backup(&location.path, keep);
+    state.store.save(s, location, &state.config())
 }
 
 #[tauri::command(async)]
@@ -83,10 +102,11 @@ pub fn workbook_save(state: State<'_, AppState>, book: String) -> AppResult<Work
             .location
             .clone()
             .ok_or_else(|| AppError::Invalid("NO_LOCATION".into()))?;
-        state.store.save(s, &location)?;
+        save_with_history(&state, s, &location)?;
         s.dirty = false;
         Ok(s.info())
     })?;
+    state.recovery.discard_live(&book);
     if let Some(path) = &info.path {
         state.recent.lock().unwrap().touch(path);
     }
@@ -95,16 +115,18 @@ pub fn workbook_save(state: State<'_, AppState>, book: String) -> AppResult<Work
 
 #[tauri::command(async)]
 pub fn workbook_save_as(state: State<'_, AppState>, book: String, path: String) -> AppResult<WorkbookInfo> {
-    let location = Location::from_path(&path)?;
+    let location = Location::for_save(&path)?;
     let info = state.with(&book, |s| {
-        state.store.save(s, &location)?;
+        save_with_history(&state, s, &location)?;
         // Saving as CSV keeps editing the workbook but future saves go to the CSV.
         s.title = location.display_name();
         s.location = Some(location.clone());
+        s.source_path = None;
         s.dirty = false;
         s.untouched = false;
         Ok(s.info())
     })?;
+    state.recovery.discard_live(&book);
     state.recent.lock().unwrap().touch(&path);
     Ok(info)
 }
@@ -112,8 +134,8 @@ pub fn workbook_save_as(state: State<'_, AppState>, book: String, path: String) 
 /// Writes a copy (e.g. CSV export) without changing the workbook's location.
 #[tauri::command(async)]
 pub fn workbook_export(state: State<'_, AppState>, book: String, path: String) -> AppResult<()> {
-    let location = Location::from_path(&path)?;
-    state.read(&book, |s| state.store.save(s, &location))
+    let location = Location::for_save(&path)?;
+    state.read(&book, |s| state.store.save(s, &location, &state.config()))
 }
 
 #[tauri::command(async)]

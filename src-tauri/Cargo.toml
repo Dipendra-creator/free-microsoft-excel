@@ -1,8 +1,8 @@
 [package]
 name = "sheets"
-version = "0.1.0"
-description = "Sheets - lightweight spreadsheet desktop app"
-authors = ["Internal"]
+version = "0.2.0"
+description = "Sheets - a lightweight, reliable spreadsheet desktop app"
+authors = ["Dipendra Bhardwaj"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -28,6 +28,7 @@ ironcalc_base = "0.8"
 thiserror = "2"
 uuid = { version = "1", features = ["v4"] }
 csv = "1"
+encoding_rs = "0.8"
 iana-time-zone = "0.1"
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
@@ -37,3 +38,6 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "2"

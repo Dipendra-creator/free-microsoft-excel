@@ -1,0 +1,33 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Sheets",
+        "width": 1400,
+        "height": 880,
+        "minWidth": 760,
+        "minHeight": 480,
+        "center": true,
+        "decorations": true,
+        "backgroundColor": "#141414",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 14,
+          "y": 17
+        }
+      }
+    ]
+  },
+  "bundle": {
+    "targets": [
+      "app",
+      "dmg"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-"
+    }
+  }
+}

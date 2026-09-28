@@ -11,24 +11,50 @@ mod commands;
 mod engine;
 mod error;
 mod recent;
+mod recovery;
 mod settings;
 mod state;
 mod storage;
 mod sync;
 mod templates;
 
+use std::time::Duration;
+
 use tauri::Manager;
 
-use commands::{app, cells, sheet, workbook};
+use commands::{app, cells, features, sheet, workbook};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // A second launch (e.g. double-clicking a file) hands the file to the
+    // running instance instead of starting another process.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|handle, argv, _cwd| {
+        let file = argv
+            .iter()
+            .skip(1)
+            .find(|a| !a.starts_with('-') && std::path::Path::new(a).is_file());
+        match file {
+            Some(f) => app::deliver_open(handle, f.clone()),
+            None => app::focus_any_window(handle),
+        }
+    }));
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let dir = app.path().app_config_dir()?;
-            app.manage(state::AppState::new(&dir));
+            let config_dir = app.path().app_config_dir()?;
+            let data_dir = app.path().app_local_data_dir().unwrap_or_else(|_| config_dir.clone());
+            app.manage(state::AppState::new(&config_dir, &data_dir));
+            // AutoRecover: snapshot changed workbooks in the background.
+            let handle = app.handle().clone();
+            std::thread::spawn(move || loop {
+                std::thread::sleep(Duration::from_secs(5));
+                if let Some(state) = handle.try_state::<state::AppState>() {
+                    state.autorecover_tick();
+                }
+            });
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -52,6 +78,27 @@ pub fn run() {
             app::window_book,
             app::focus_book,
             app::open_book_window,
+            app::list_book_windows,
+            features::note_set,
+            features::notes_delete,
+            features::notes_list,
+            features::chart_save,
+            features::chart_delete,
+            features::range_values,
+            features::filter_toggle,
+            features::filter_values,
+            features::filter_set,
+            features::filter_clear,
+            features::filter_reapply,
+            features::filter_sort,
+            features::text_to_columns,
+            features::pivot_create,
+            features::health_check,
+            features::recovery_list,
+            features::recovery_open,
+            features::recovery_discard,
+            features::versions_list,
+            features::version_open,
             workbook::workbook_new,
             workbook::workbook_open,
             workbook::workbook_info,
@@ -118,6 +165,18 @@ pub fn run() {
             cells::cf_delete,
             cells::cf_clear,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|_handle, _event| {
+            // macOS delivers files opened from Finder (double-click, "Open
+            // With", drag onto the Dock icon) as an event, not as arguments.
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            if let tauri::RunEvent::Opened { urls } = &_event {
+                for url in urls {
+                    if let Ok(path) = url.to_file_path() {
+                        app::deliver_open(_handle, path.to_string_lossy().to_string());
+                    }
+                }
+            }
+        });
 }

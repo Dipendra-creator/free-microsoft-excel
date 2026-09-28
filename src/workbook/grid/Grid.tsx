@@ -5,8 +5,13 @@ import { functionDoc, syntaxParts } from "../../lib/functions";
 import { fontCss, type HitResult, type WorkbookController } from "../controller";
 import { useCtl } from "../hooks";
 import { handleEditorKey, handleGridKey } from "../keys";
-import { GridRenderer, readTheme } from "./renderer";
+import { ChartLayer } from "../charts/ChartLayer";
+import { FilterMenu } from "../FilterMenu";
+import { NotesLayer } from "../NotesLayer";
+import { filterButtonBox, GridRenderer, readTheme } from "./renderer";
 import { Scrollbar } from "./Scrollbar";
+
+const LINK = /^((https?:\/\/|mailto:)\S+|www\.\S+\.\S+)$/i;
 
 export interface GridContextMenu {
   x: number;
@@ -27,6 +32,8 @@ export function Grid({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<GridRenderer | null>(null);
   const [cursor, setCursor] = useState("cell");
+  const [filterMenu, setFilterMenu] = useState<{ col: number; anchor: DOMRect } | null>(null);
+  const [hoverNote, setHoverNote] = useState<{ r: number; c: number } | null>(null);
 
   // Renderer lifecycle
   useEffect(() => {
@@ -132,11 +139,40 @@ export function Grid({
     return { r, c };
   };
 
+  /** Filter dropdown button under (x, y), if any. */
+  const filterButtonHit = (hit: HitResult, x: number, y: number): DOMRect | null => {
+    if (hit.kind !== "cell" || !ctl.filterButtonAt(hit.r, hit.c)) return null;
+    const b = filterButtonBox(ctl, hit.r, hit.c);
+    if (!b || x < b.x || x > b.x + b.w || y < b.y || y > b.y + b.h) return null;
+    const cr = canvasRef.current!.getBoundingClientRect();
+    return new DOMRect(cr.left + b.x, cr.top + b.y, b.w, b.h);
+  };
+
   const onMouseDown = (e: React.MouseEvent) => {
     const { x, y } = local(e);
     const hit: HitResult = ctl.hitTest(x, y);
     if (hit.kind === "none") return;
     e.preventDefault();
+    if (ctl.selectedChart) ctl.selectChart(null);
+
+    // AutoFilter dropdown
+    if (e.button === 0 && !ctl.edit) {
+      const button = filterButtonHit(hit, x, y);
+      if (button) {
+        focusEditor();
+        setFilterMenu({ col: hit.c, anchor: button });
+        return;
+      }
+    }
+
+    // Ctrl/Cmd+click opens a link typed in the cell
+    if (e.button === 0 && (e.ctrlKey || e.metaKey) && hit.kind === "cell" && !ctl.edit) {
+      const text = (ctl.cache.get(hit.r, hit.c)?.text ?? "").trim();
+      if (LINK.test(text)) {
+        ctl.openLink(hit.r, hit.c);
+        return;
+      }
+    }
 
     // Right click: keep the selection if clicked inside it
     if (e.button === 2) {
@@ -300,8 +336,12 @@ export function Grid({
     else if (hit.kind === "rowHeader") c = "row-select";
     else if (hit.fillHandle) c = "crosshair";
     else if (hit.kind === "corner") c = "default";
+    else if (filterButtonHit(hit, x, y)) c = "default";
     else if (ctl.painter) c = "painter";
+    else if ((e.ctrlKey || e.metaKey) && hit.kind === "cell" && LINK.test((ctl.cache.get(hit.r, hit.c)?.text ?? "").trim())) c = "pointer";
     if (c !== cursor) setCursor(c);
+    const note = hit.kind === "cell" && ctl.hasNote(hit.r, hit.c) ? { r: hit.r, c: hit.c } : null;
+    if (note?.r !== hoverNote?.r || note?.c !== hoverNote?.c) setHoverNote(note);
   };
 
   const onDoubleClick = (e: React.MouseEvent) => {
@@ -346,10 +386,24 @@ export function Grid({
         onMouseMove={onMouseMove}
         onDoubleClick={onDoubleClick}
         onWheel={onWheel}
+        onMouseLeave={() => hoverNote && setHoverNote(null)}
         onContextMenu={(e) => e.preventDefault()}
       >
         <canvas ref={canvasRef} className="grid-canvas" />
+        <ChartLayer ctl={ctl} />
+        <NotesLayer ctl={ctl} hover={hoverNote} />
         <CellEditor ctl={ctl} editorRef={editorRef} />
+        {filterMenu && (
+          <FilterMenu
+            ctl={ctl}
+            col={filterMenu.col}
+            anchor={filterMenu.anchor}
+            onClose={() => {
+              setFilterMenu(null);
+              focusEditor();
+            }}
+          />
+        )}
       </div>
       <Scrollbar ctl={ctl} orientation="vertical" />
     </div>

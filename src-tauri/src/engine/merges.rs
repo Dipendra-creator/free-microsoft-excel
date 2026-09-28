@@ -126,7 +126,7 @@ impl MergeStore {
     }
 }
 
-fn insert_span(start: i32, end: i32, at: i32, count: i32) -> (i32, i32) {
+pub(crate) fn insert_span(start: i32, end: i32, at: i32, count: i32) -> (i32, i32) {
     if start >= at {
         (start + count, end + count)
     } else if end >= at {
@@ -136,7 +136,7 @@ fn insert_span(start: i32, end: i32, at: i32, count: i32) -> (i32, i32) {
     }
 }
 
-fn delete_span(start: i32, end: i32, at: i32, count: i32) -> Option<(i32, i32)> {
+pub(crate) fn delete_span(start: i32, end: i32, at: i32, count: i32) -> Option<(i32, i32)> {
     let del_end = at + count - 1;
     if end < at {
         return Some((start, end));

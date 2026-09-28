@@ -181,8 +181,7 @@ export function clearMenu(ctl: WorkbookController): MenuItem[] {
     { label: "Clear All", icon: "clear", onClick: () => ctl.clear("all") },
     { label: "Clear Formats", onClick: () => ctl.clear("formats") },
     { label: "Clear Contents", shortcut: "Delete", onClick: () => ctl.clear("contents") },
-    { label: "Clear Comments and Notes", disabled: true },
-    { label: "Clear Hyperlinks", disabled: true },
+    { label: "Clear Notes", icon: "comment", onClick: () => ctl.deleteNotes() },
   ];
 }
 
@@ -192,7 +191,9 @@ export function sortMenu(ctl: WorkbookController): MenuItem[] {
     { label: "Sort Z to A", icon: "sortZA", onClick: () => ctl.sort(false) },
     { label: "Custom Sort...", icon: "sortCustom", onClick: () => ctl.ui?.dialog("sort") },
     { separator: true },
-    { label: "Filter", icon: "filter", disabled: true, description: "Coming soon" },
+    { label: "Filter", icon: "filter", shortcut: "Ctrl+Shift+L", checked: !!ctl.filter, onClick: () => ctl.toggleFilter() },
+    { label: "Clear", icon: "clear", disabled: !ctl.filter?.active.length, onClick: () => ctl.clearFilter() },
+    { label: "Reapply", icon: "redo", disabled: !ctl.filter, onClick: () => ctl.reapplyFilter() },
   ];
 }
 
@@ -434,6 +435,24 @@ export function cellContextMenu(ctl: WorkbookController, kind: "cell" | "colHead
         { label: "Custom Sort...", icon: "sortCustom", onClick: () => ctl.ui?.dialog("sort") },
       ],
     },
+    {
+      label: "Filter",
+      icon: "filter",
+      submenu: [
+        { label: "Filter by Selected Cell's Value", icon: "filter", onClick: () => ctl.filterByActiveValue() },
+        { label: ctl.filter ? "Remove Filter" : "Add Filter", icon: "filter", onClick: () => ctl.toggleFilter() },
+        { label: "Clear Filter", icon: "clear", disabled: !ctl.filter?.active.length, onClick: () => ctl.clearFilter() },
+        { label: "Reapply", icon: "redo", disabled: !ctl.filter, onClick: () => ctl.reapplyFilter() },
+      ],
+    },
+    { separator: true },
+    ctl.hasNote(ctl.sel.active.r, ctl.sel.active.c)
+      ? { label: "Edit Note", icon: "comment", shortcut: "Shift+F2", onClick: () => ctl.ui?.dialog("note") }
+      : { label: "New Note", icon: "comment", shortcut: "Shift+F2", onClick: () => ctl.ui?.dialog("note") },
+    ...(ctl.hasNote(ctl.sel.active.r, ctl.sel.active.c) ? [{ label: "Delete Note", icon: "delete", onClick: () => ctl.setNote("") }] : []),
+    /^((https?:\/\/|mailto:)\S+|www\.\S+\.\S+)$/i.test((ctl.cache.get(ctl.sel.active.r, ctl.sel.active.c)?.text ?? "").trim())
+      ? { label: "Open Hyperlink", icon: "link", onClick: () => ctl.openLink() }
+      : { label: "Link...", icon: "link", shortcut: "Ctrl+K", onClick: () => ctl.ui?.dialog("link") },
     { separator: true },
     { label: "Format Cells...", icon: "formatCells", shortcut: "Ctrl+1", onClick: () => ctl.ui?.dialog("formatCells") },
     { label: "Define Name...", icon: "tag", onClick: () => ctl.ui?.dialog("defineName") },
