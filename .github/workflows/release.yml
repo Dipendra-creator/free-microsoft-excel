@@ -1,13 +1,20 @@
 name: Release
 
 # Builds Sheets for Windows and macOS and publishes a GitHub Release.
-# Trigger: push a tag that matches the app version (e.g. v0.2.0), or run it
-# manually from the Actions tab (it tags the current commit with the version
-# from src-tauri/tauri.conf.json).
+# Triggers:
+#  * a push to main whose version (src-tauri/tauri.conf.json) has no published
+#    release yet — bump the version on main to ship it;
+#  * a pushed tag that matches the version (e.g. v0.2.0);
+#  * a manual run from the Actions tab.
+# GitHub creates the vX.Y.Z tag when the release is published.
 
 on:
   push:
     tags: ["v*"]
+    branches:
+      - main
+      # One-off: the first release (0.2.0) is built from this branch.
+      - claude/adoring-cori-us8u2f
   workflow_dispatch:
 
 concurrency:
@@ -22,6 +29,7 @@ jobs:
       contents: write
     outputs:
       release_id: ${{ steps.create.outputs.result }}
+      skip: ${{ steps.create.outputs.skip }}
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
     steps:
@@ -58,6 +66,12 @@ jobs:
               .replaceAll('{{REPO}}', repo);
             const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
             const existing = releases.find((r) => r.tag_name === TAG);
+            core.setOutput('skip', 'false');
+            if (existing && !existing.draft && context.eventName === 'push' && context.ref.startsWith('refs/heads/')) {
+              core.notice(`${TAG} is already released; bump the version in src-tauri/tauri.conf.json to publish a new release.`);
+              core.setOutput('skip', 'true');
+              return existing.id;
+            }
             if (existing) {
               // A retried draft follows the commit being built
               const update = existing.draft ? { target_commitish: context.sha } : {};
@@ -78,6 +92,7 @@ jobs:
   build:
     name: Build (${{ matrix.label }})
     needs: create-release
+    if: needs.create-release.outputs.skip != 'true'
     permissions:
       contents: write
     strategy:
@@ -155,6 +170,7 @@ jobs:
   publish-release:
     name: Publish release
     needs: [create-release, build]
+    if: needs.create-release.outputs.skip != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write

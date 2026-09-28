@@ -46,4 +46,4 @@ Open the `.dmg` and drag **Sheets** to **Applications**. The app is not notarize
 - Print / Save as PDF (Ctrl+P), Switch Windows.
 - macOS support with native window buttons and ⌘ shortcuts.
 
-See the [README](https://github.com/{{REPO}}#readme) and the [roadmap](https://github.com/{{REPO}}/blob/main/docs/ROADMAP.md) for details.
+See the [README](https://github.com/{{REPO}}/blob/{{TAG}}/README.md), the [roadmap](https://github.com/{{REPO}}/blob/{{TAG}}/docs/ROADMAP.md) and [why Sheets is safer than Excel](https://github.com/{{REPO}}/blob/{{TAG}}/docs/EXCEL_PAIN_POINTS.md) for details.

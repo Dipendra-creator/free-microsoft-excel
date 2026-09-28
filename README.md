@@ -139,12 +139,13 @@ cd .. && pnpm typecheck                                              # TypeScrip
 
 1. Bump the version in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `package.json`,
    and add a section to `CHANGELOG.md`.
-2. Commit, then tag and push: `git tag v0.3.0 && git push origin v0.3.0`
-   (or run the **Release** workflow manually from the Actions tab).
-3. [`.github/workflows/release.yml`](.github/workflows/release.yml) builds Windows
-   (installer, MSI, portable) and macOS (Apple Silicon and Intel DMGs) in parallel, uploads
-   them to a draft release with the notes from [`.github/release-notes.md`](.github/release-notes.md),
-   and publishes it when every build has succeeded.
+2. Push (or merge) the change to `main`. Pushing a matching tag (`git tag v0.3.0 && git push origin v0.3.0`)
+   or running the **Release** workflow from the Actions tab works too.
+3. [`.github/workflows/release.yml`](.github/workflows/release.yml) sees that this version has no
+   release yet, builds Windows (installer, MSI, portable) and macOS (Apple Silicon and Intel DMGs)
+   in parallel, uploads them to a draft release with the notes from
+   [`.github/release-notes.md`](.github/release-notes.md), and publishes it — creating the `vX.Y.Z`
+   tag — when every build has succeeded. Pushes that don't change the version don't release anything.
 
 ---
 
