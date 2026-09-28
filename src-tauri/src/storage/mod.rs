@@ -72,6 +72,26 @@ impl Location {
         Ok(Location { path, format })
     }
 
+    /// A location Sheets may write to. Macro-enabled workbooks are refused:
+    /// Sheets does not keep VBA projects, and writing a macro-free workbook
+    /// under an `.xlsm` name makes Excel reject the file.
+    pub fn for_save(path: impl Into<PathBuf>) -> AppResult<Location> {
+        let location = Location::from_path(path)?;
+        if location.is_macro_enabled() {
+            return Err(AppError::Unsupported(
+                "Sheets doesn't keep macros, so it can't save macro-enabled workbooks (.xlsm). Save it as an Excel Workbook (.xlsx) instead.".into(),
+            ));
+        }
+        Ok(location)
+    }
+
+    pub fn is_macro_enabled(&self) -> bool {
+        self.path
+            .extension()
+            .map(|e| e.eq_ignore_ascii_case("xlsm"))
+            .unwrap_or(false)
+    }
+
     pub fn display_name(&self) -> String {
         self.path
             .file_stem()

@@ -153,10 +153,13 @@ impl AppState {
         let sessions = self.sessions.lock().unwrap();
         for (id, s) in sessions.iter() {
             if let Ok(s) = s.try_lock() {
-                if let Some(loc) = &s.location {
-                    if loc.path.to_string_lossy().eq_ignore_ascii_case(path) {
-                        return Some(id.clone());
-                    }
+                let open_path = s
+                    .location
+                    .as_ref()
+                    .map(|l| l.path.to_string_lossy().to_string())
+                    .or_else(|| s.source_path.clone());
+                if open_path.map(|p| p.eq_ignore_ascii_case(path)).unwrap_or(false) {
+                    return Some(id.clone());
                 }
             }
         }

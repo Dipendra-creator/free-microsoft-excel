@@ -613,3 +613,11 @@ fn pivot_without_column_field() {
         assert!(s.cell_info(index, 3, c).unwrap().style.fill.is_some(), "no fill in column {c}");
     }
 }
+
+#[test]
+fn macro_workbooks_are_never_overwritten() {
+    use crate::storage::Location;
+    assert!(Location::for_save("/tmp/book.xlsm").is_err());
+    assert!(Location::for_save("/tmp/book.xlsx").is_ok());
+    assert!(Location::from_path("/tmp/book.xlsm").unwrap().is_macro_enabled());
+}

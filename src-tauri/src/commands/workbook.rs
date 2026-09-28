@@ -64,7 +64,15 @@ pub fn workbook_open(state: State<'_, AppState>, path: String) -> AppResult<Open
     let config = state.config();
     let model = state.store.load(&location, &config)?;
     let title = location.display_name();
-    let session = Session::new(new_id(), title, model, Some(location));
+    // Macro-enabled workbooks are never overwritten (macros would be lost):
+    // the first save asks where to store an .xlsx copy.
+    let session = if location.is_macro_enabled() {
+        let mut s = Session::new(new_id(), title, model, None);
+        s.source_path = Some(path.clone());
+        s
+    } else {
+        Session::new(new_id(), title, model, Some(location))
+    };
     let info = session.info();
     state.insert(session);
     state.recent.lock().unwrap().touch(&path);
@@ -103,12 +111,13 @@ pub fn workbook_save(state: State<'_, AppState>, book: String) -> AppResult<Work
 
 #[tauri::command(async)]
 pub fn workbook_save_as(state: State<'_, AppState>, book: String, path: String) -> AppResult<WorkbookInfo> {
-    let location = Location::from_path(&path)?;
+    let location = Location::for_save(&path)?;
     let info = state.with(&book, |s| {
         save_with_history(&state, s, &location)?;
         // Saving as CSV keeps editing the workbook but future saves go to the CSV.
         s.title = location.display_name();
         s.location = Some(location.clone());
+        s.source_path = None;
         s.dirty = false;
         s.untouched = false;
         Ok(s.info())
@@ -121,7 +130,7 @@ pub fn workbook_save_as(state: State<'_, AppState>, book: String, path: String) 
 /// Writes a copy (e.g. CSV export) without changing the workbook's location.
 #[tauri::command(async)]
 pub fn workbook_export(state: State<'_, AppState>, book: String, path: String) -> AppResult<()> {
-    let location = Location::from_path(&path)?;
+    let location = Location::for_save(&path)?;
     state.read(&book, |s| state.store.save(s, &location, &state.config()))
 }
 

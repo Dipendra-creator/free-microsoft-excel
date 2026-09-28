@@ -317,6 +317,9 @@ pub struct WorkbookInfo {
     pub title: String,
     pub path: Option<String>,
     pub format: Option<String>,
+    /// Original file of a workbook that must be saved elsewhere (.xlsm).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_path: Option<String>,
     pub dirty: bool,
     pub untouched: bool,
     pub sheets: Vec<SheetInfo>,

@@ -1513,7 +1513,20 @@ export class WorkbookController {
 
   async save(): Promise<boolean> {
     if (this.edit) await this.commitEdit("none");
-    if (!this.info.path) return (await this.ui?.saveAs()) ?? false;
+    if (!this.info.path) {
+      if (this.info.sourcePath) {
+        const answer = await this.ui?.ask(
+          "Save a Copy",
+          "This workbook contains macros (.xlsm). Sheets doesn't run or keep macros, so your original file is left untouched and a copy is saved as an Excel Workbook (.xlsx).",
+          [
+            { label: "Save as .xlsx", value: "ok", primary: true },
+            { label: "Cancel", value: "cancel" },
+          ],
+        );
+        if (answer !== "ok") return false;
+      }
+      return (await this.ui?.saveAs()) ?? false;
+    }
     try {
       const info = await api.save(this.id);
       await this.setInfo(info);

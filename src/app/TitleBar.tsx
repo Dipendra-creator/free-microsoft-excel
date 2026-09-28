@@ -86,7 +86,8 @@ export function CommandSearch({ commands, onFind }: { commands: () => SearchComm
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.altKey && (e.key === "q" || e.key === "Q")) {
+      // e.code: on macOS Option+Q types "œ"
+      if (e.altKey && (e.key === "q" || e.key === "Q" || e.code === "KeyQ")) {
         e.preventDefault();
         inputRef.current?.focus();
       }

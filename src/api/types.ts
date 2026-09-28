@@ -211,6 +211,8 @@ export interface WorkbookInfo {
   title: string;
   path: string | null;
   format: string | null;
+  /** Original file that must not be overwritten (macro-enabled .xlsm). */
+  sourcePath?: string;
   dirty: boolean;
   untouched: boolean;
   sheets: SheetInfo[];

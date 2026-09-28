@@ -1,0 +1,172 @@
+name: Release
+
+# Builds Sheets for Windows and macOS and publishes a GitHub Release.
+# Trigger: push a tag that matches the app version (e.g. v0.2.0), or run it
+# manually from the Actions tab (it tags the current commit with the version
+# from src-tauri/tauri.conf.json).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    name: Create draft release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.create.outputs.result }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v$VERSION"; fi
+          if [[ "$TAG" != "v$VERSION" ]]; then
+            echo "::error::Tag $TAG does not match the app version v$VERSION in src-tauri/tauri.conf.json"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create or reuse the release
+        id: create
+        uses: actions/github-script@v9
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { VERSION, TAG } = process.env;
+            const repo = `${context.repo.owner}/${context.repo.repo}`;
+            const body = fs
+              .readFileSync('.github/release-notes.md', 'utf8')
+              .replaceAll('{{VERSION}}', VERSION)
+              .replaceAll('{{TAG}}', TAG)
+              .replaceAll('{{REPO}}', repo);
+            const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
+            const existing = releases.find((r) => r.tag_name === TAG);
+            if (existing) {
+              await github.rest.repos.updateRelease({ ...context.repo, release_id: existing.id, body });
+              return existing.id;
+            }
+            const { data } = await github.rest.repos.createRelease({
+              ...context.repo,
+              tag_name: TAG,
+              target_commitish: context.sha,
+              name: `Sheets ${TAG}`,
+              body,
+              draft: true,
+              prerelease: false,
+            });
+            return data.id;
+
+  build:
+    name: Build (${{ matrix.label }})
+    needs: create-release
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Windows x64
+            platform: windows-latest
+            args: ""
+          - label: macOS Apple Silicon
+            platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - label: macOS Intel
+            platform: macos-latest
+            args: --target x86_64-apple-darwin
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.args }}
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and upload installers
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          releaseDraft: true
+          args: ${{ matrix.args }}
+          uploadUpdaterJson: false
+
+      - name: Upload portable Windows executable
+        if: matrix.platform == 'windows-latest'
+        uses: actions/github-script@v9
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+        with:
+          script: |
+            const fs = require('fs');
+            const releaseId = Number(process.env.RELEASE_ID);
+            const name = `Sheets_${process.env.VERSION}_x64-portable.exe`;
+            const data = fs.readFileSync('src-tauri/target/release/sheets.exe');
+            const assets = await github.paginate(github.rest.repos.listReleaseAssets, { ...context.repo, release_id: releaseId });
+            for (const asset of assets.filter((a) => a.name === name)) {
+              await github.rest.repos.deleteReleaseAsset({ ...context.repo, asset_id: asset.id });
+            }
+            await github.rest.repos.uploadReleaseAsset({
+              ...context.repo,
+              release_id: releaseId,
+              name,
+              data,
+              headers: { 'content-type': 'application/octet-stream', 'content-length': data.length },
+            });
+
+  publish-release:
+    name: Publish release
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the draft
+        uses: actions/github-script@v9
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            await github.rest.repos.updateRelease({
+              ...context.repo,
+              release_id: Number(process.env.RELEASE_ID),
+              draft: false,
+              prerelease: false,
+              make_latest: 'true',
+            });

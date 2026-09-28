@@ -157,6 +157,9 @@ pub struct Session {
     pub edit_seq: u64,
     /// Keep leading-zero and >15-digit numbers as text (see `input::protect_literal`).
     pub preserve_literals: bool,
+    /// File this workbook was opened from when Sheets must not overwrite it
+    /// (macro-enabled workbooks): saving asks for a new `.xlsx` path.
+    pub source_path: Option<String>,
 }
 
 fn area(sheet: u32, r: &Rect) -> Area {
@@ -244,6 +247,7 @@ impl Session {
             default_font,
             edit_seq: 0,
             preserve_literals: true,
+            source_path: None,
         }
     }
 
@@ -437,6 +441,7 @@ impl Session {
                 .as_ref()
                 .map(|l| l.path.to_string_lossy().to_string()),
             format: self.location.as_ref().map(|l| l.format.extension().to_string()),
+            source_path: self.source_path.clone(),
             dirty: self.dirty,
             untouched: self.untouched,
             sheets,

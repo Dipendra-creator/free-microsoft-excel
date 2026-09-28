@@ -191,7 +191,8 @@ export function handleGridKey(ctl: WorkbookController, e: KeyboardEvent): boolea
   }
 
   if (e.altKey && !ctrl) {
-    if (key === "=") {
+    // e.code: on macOS Option+= types "≠"
+    if (key === "=" || e.code === "Equal") {
       ctl.autoSum();
       return true;
     }
