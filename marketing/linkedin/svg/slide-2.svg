@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1350" viewBox="0 0 1080 1350">
+<defs>
+  <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#0B3D23"/>
+    <stop offset="1" stop-color="#0E6A38"/>
+  </linearGradient>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#021C0E" flood-opacity="0.45"/>
+  </filter>
+  <filter id="soft" x="-5%" y="-5%" width="110%" height="120%">
+    <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0B3D23" flood-opacity="0.10"/>
+  </filter>
+  
+</defs>
+<rect width="1080" height="1350" fill="#F3F7F4"/>
+<g transform="translate(72,64) scale(3.5)">
+  <rect x="4.5" y="1.5" width="11" height="13" rx="1.5" fill="#33C481"/>
+  <path d="M4.5 3a1.5 1.5 0 0 1 1.5-1.5h8a1.5 1.5 0 0 1 1.5 1.5v2.8h-11z" fill="#21A366"/>
+  <path d="M4.5 10.2h11V13a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 13z" fill="#107C41"/>
+  <rect x="0.5" y="4" width="8" height="8" rx="1" fill="#0B5C30"/>
+  <path d="M2.2 5.7h4.6v4.6H2.2zM4.5 5.7v4.6M2.2 8h4.6" stroke="#fff" stroke-width="0.9" fill="none"/>
+</g>
+<text x="146" y="106" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="38" font-weight="700" fill="#10231A" text-anchor="start" >Sheets</text>
+<text x="1008" y="104" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="600" fill="#4F6358" text-anchor="end" >2 / 7</text>
+<text x="72" y="232" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="70" font-weight="800" fill="#10231A" text-anchor="start" >Excel silently</text>
+<text x="72" y="316" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="70" font-weight="800" fill="#10231A" text-anchor="start" >changes your data.</text>
+<text x="72" y="372" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="32" font-weight="600" fill="#107C41" text-anchor="start" >Sheets keeps it exactly as you typed it.</text>
+<g filter="url(#soft)"><rect x="72" y="418" width="936" height="178" rx="20" fill="#FFFFFF"/></g>
+<text x="104" y="462" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="18" font-weight="700" fill="#4F6358" text-anchor="start" letter-spacing="1.5">YOU TYPE · ZIP CODE</text>
+<text x="104" y="510" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="40" font-weight="700" fill="#10231A" text-anchor="start" >00501</text>
+<rect x="729.5" y="482" width="246.5" height="36" rx="18" fill="#FCEBEA"/>
+<text x="852.75" y="506" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="19" font-weight="700" fill="#C8413A" text-anchor="middle" >leading zeros dropped</text>
+<rect x="104" y="532" width="430" height="48" rx="12" fill="#FCEBEA"/>
+<text x="124" y="564" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#C8413A" text-anchor="start" >Excel:</text>
+<text x="204" y="564" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="24" font-weight="700" fill="#C8413A" text-anchor="start" >501</text>
+<rect x="550" y="532" width="426" height="48" rx="12" fill="#E6F5EC"/>
+<text x="570" y="564" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#107C41" text-anchor="start" >Sheets:</text>
+<text x="660" y="564" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="24" font-weight="700" fill="#107C41" text-anchor="start" >00501</text>
+<path d="M950 556l8 8 16-18" stroke="#107C41" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<g filter="url(#soft)"><rect x="72" y="614" width="936" height="178" rx="20" fill="#FFFFFF"/></g>
+<text x="104" y="658" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="18" font-weight="700" fill="#4F6358" text-anchor="start" letter-spacing="1.5">YOU TYPE · 16-DIGIT CARD NUMBER</text>
+<text x="104" y="706" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="40" font-weight="700" fill="#10231A" text-anchor="start" >4111222233334444</text>
+<rect x="698.0" y="678" width="278.0" height="36" rx="18" fill="#FCEBEA"/>
+<text x="837.0" y="702" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="19" font-weight="700" fill="#C8413A" text-anchor="middle" >last digit lost for good</text>
+<rect x="104" y="728" width="430" height="48" rx="12" fill="#FCEBEA"/>
+<text x="124" y="760" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#C8413A" text-anchor="start" >Excel:</text>
+<text x="204" y="760" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="24" font-weight="700" fill="#C8413A" text-anchor="start" >4.11122E+15</text>
+<rect x="550" y="728" width="426" height="48" rx="12" fill="#E6F5EC"/>
+<text x="570" y="760" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#107C41" text-anchor="start" >Sheets:</text>
+<text x="660" y="760" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="21" font-weight="700" fill="#107C41" text-anchor="start" >4111222233334444</text>
+<path d="M950 752l8 8 16-18" stroke="#107C41" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<g filter="url(#soft)"><rect x="72" y="810" width="936" height="178" rx="20" fill="#FFFFFF"/></g>
+<text x="104" y="854" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="18" font-weight="700" fill="#4F6358" text-anchor="start" letter-spacing="1.5">YOU TYPE · GENE NAME</text>
+<text x="104" y="902" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="40" font-weight="700" fill="#10231A" text-anchor="start" >SEPT1</text>
+<rect x="761.0" y="874" width="215.0" height="36" rx="18" fill="#FCEBEA"/>
+<text x="868.5" y="898" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="19" font-weight="700" fill="#C8413A" text-anchor="middle" >turned into a date</text>
+<rect x="104" y="924" width="430" height="48" rx="12" fill="#FCEBEA"/>
+<text x="124" y="956" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#C8413A" text-anchor="start" >Excel:</text>
+<text x="204" y="956" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="24" font-weight="700" fill="#C8413A" text-anchor="start" >1-Sep</text>
+<rect x="550" y="924" width="426" height="48" rx="12" fill="#E6F5EC"/>
+<text x="570" y="956" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#107C41" text-anchor="start" >Sheets:</text>
+<text x="660" y="956" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="24" font-weight="700" fill="#107C41" text-anchor="start" >SEPT1</text>
+<path d="M950 948l8 8 16-18" stroke="#107C41" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<g filter="url(#soft)"><rect x="72" y="1006" width="936" height="178" rx="20" fill="#FFFFFF"/></g>
+<text x="104" y="1050" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="18" font-weight="700" fill="#4F6358" text-anchor="start" letter-spacing="1.5">YOU TYPE · TEXT IN A UTF-8 CSV FILE</text>
+<text x="104" y="1098" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="40" font-weight="700" fill="#10231A" text-anchor="start" >café</text>
+<rect x="792.5" y="1070" width="183.5" height="36" rx="18" fill="#FCEBEA"/>
+<text x="884.25" y="1094" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="19" font-weight="700" fill="#C8413A" text-anchor="middle" >garbled accents</text>
+<rect x="104" y="1120" width="430" height="48" rx="12" fill="#FCEBEA"/>
+<text x="124" y="1152" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#C8413A" text-anchor="start" >Excel:</text>
+<text x="204" y="1152" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="24" font-weight="700" fill="#C8413A" text-anchor="start" >cafÃ©</text>
+<rect x="550" y="1120" width="426" height="48" rx="12" fill="#E6F5EC"/>
+<text x="570" y="1152" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="700" fill="#107C41" text-anchor="start" >Sheets:</text>
+<text x="660" y="1152" font-family="'JetBrains Mono', Consolas, 'SF Mono', Menlo, 'Liberation Mono', 'DejaVu Sans Mono', monospace" font-size="24" font-weight="700" fill="#107C41" text-anchor="start" >café</text>
+<path d="M950 1144l8 8 16-18" stroke="#107C41" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="1210" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="22" font-weight="500" fill="#4F6358" text-anchor="start" font-style="italic">27 human genes were renamed because spreadsheets kept turning them into dates.</text>
+<line x1="72" y1="1238" x2="1008" y2="1238" stroke="#D8E4DC" stroke-width="2"/>
+<text x="72" y="1290" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="500" fill="#4F6358" text-anchor="start" >Free · Windows &amp; macOS · Opens and saves .xlsx</text>
+<rect x="876" y="1256" width="132" height="52" rx="26" fill="#107C41"/>
+<text x="942.0" y="1291" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="700" fill="#FFFFFF" text-anchor="middle" >Swipe →</text>
+</svg>
