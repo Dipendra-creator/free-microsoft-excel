@@ -144,6 +144,7 @@ pub fn run() {
             cells::clipboard_copy,
             cells::clipboard_clear,
             cells::clipboard_paste,
+            cells::clipboard_paste_special,
             cells::current_region,
             cells::range_insert_cells,
             cells::range_delete_cells,

@@ -28,7 +28,7 @@ const STAT_LABEL: Record<StatKey, string> = {
 };
 
 export function StatusBar({ ctl }: { ctl: WorkbookController }) {
-  const s = useCtl(ctl, (c) => ({ mode: c.mode, stats: c.stats, zoom: c.zoom, painter: !!c.painter, clip: c.clip }));
+  const s = useCtl(ctl, (c) => ({ mode: c.mode, stats: c.stats, zoom: c.zoom, painter: !!c.painter, clip: c.clip, note: c.statusNote, extend: c.extendMode, end: c.endMode }));
   const [shown, setShown] = useState<Record<StatKey, boolean>>(() => {
     try {
       const saved = localStorage.getItem("sheets.statusStats");
@@ -77,6 +77,9 @@ export function StatusBar({ ctl }: { ctl: WorkbookController }) {
   let mode: string = s.mode;
   if (s.clip && mode === "Ready") mode = "Select destination and press ENTER or choose Paste";
   if (s.painter) mode = "Click to apply formatting";
+  else if (s.extend && mode === "Ready") mode = "Extend Selection";
+  else if (s.end && mode === "Ready") mode = "End Mode";
+  else if (s.note && mode === "Ready") mode = s.note;
 
   return (
     <div

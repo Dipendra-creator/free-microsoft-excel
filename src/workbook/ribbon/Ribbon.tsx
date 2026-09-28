@@ -4,6 +4,7 @@ import { Popup } from "../../components/Popup";
 import type { WorkbookController } from "../controller";
 import { useCtl } from "../hooks";
 import { HomeTab } from "./HomeTab";
+import { KeyTips } from "./KeyTips";
 import { DataTab, FormulasTab, HelpTab, InsertTab, PageLayoutTab, ReviewTab, ViewTab } from "./OtherTabs";
 
 const TABS = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Review", "View", "Help"] as const;
@@ -14,6 +15,7 @@ export function Ribbon({ ctl, onFile }: { ctl: WorkbookController; onFile: () =>
   const collapsed = useCtl(ctl, (c) => c.ribbonCollapsed);
   const [peek, setPeek] = useState(false);
   const [share, setShare] = useState<DOMRect | null>(null);
+  const keyTips = useCtl(ctl, (c) => c.keyTips);
 
   const content = (
     <div className="ribbon-content" onMouseDown={(e) => e.preventDefault()}>
@@ -80,7 +82,16 @@ export function Ribbon({ ctl, onFile }: { ctl: WorkbookController; onFile: () =>
           </Popup>
         )}
       </div>
-      {(!collapsed || peek) && (
+      <KeyTips
+        ctl={ctl}
+        tab={tab}
+        onTab={(t) => {
+          setTab(t as Tab);
+          if (collapsed) setPeek(true);
+        }}
+        onFile={onFile}
+      />
+      {(!collapsed || peek || keyTips === "controls") && (
         <div className={peek ? "ribbon-peek" : ""} onMouseLeave={() => peek && setPeek(false)}>
           {content}
         </div>

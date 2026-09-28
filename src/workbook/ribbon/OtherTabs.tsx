@@ -164,6 +164,12 @@ export function DataTab({ ctl }: { ctl: WorkbookController }) {
       </RibbonGroup>
       <RibbonGroup label="Data Tools">
         <BigButton icon="textToColumns" label={"Text to\nColumns"} onClick={() => ctl.ui?.dialog("textToColumns")} />
+        <BigButton
+          icon="flashFill"
+          label={"Flash\nFill"}
+          title="Flash Fill (Ctrl+E): type an example of the result next to your data, then fill the rest of the column"
+          onClick={() => ctl.flashFill()}
+        />
         <BigButton icon="removeDuplicates" label={"Remove\nDuplicates"} onClick={() => ctl.ui?.dialog("removeDuplicates")} />
         <BigButton icon="pivot" label={"Summarize\n(Pivot)"} onClick={() => ctl.ui?.dialog("pivot")} />
       </RibbonGroup>

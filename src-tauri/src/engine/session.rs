@@ -30,9 +30,11 @@ use crate::{
 
 mod features;
 mod fill;
+mod special;
 
 pub use features::{FilterValue, HealthReport, PivotSpec, RangeValues, SplitOptions};
 pub use fill::{FillMode, FillReport, FlashFillResult, SeriesSpec};
+pub use special::PasteSpecial;
 
 pub type Engine = UserModel<'static>;
 

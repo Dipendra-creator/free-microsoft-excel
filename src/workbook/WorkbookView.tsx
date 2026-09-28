@@ -124,6 +124,26 @@ function commandList(ctl: WorkbookController): SearchCommand[] {
     { label: "Print / Save as PDF", hint: "Ctrl+P", icon: "print", run: () => ctl.ui?.backstage("print") },
     { label: "Recover Unsaved Workbooks", icon: "recover", run: () => ctl.ui?.backstage("open") },
     { label: "Switch Windows", icon: "switchWindows", run: d("switchWindows") },
+    { label: "Flash Fill", hint: "Ctrl+E", icon: "flashFill", run: () => ctl.flashFill() },
+    { label: "Fill Down", hint: "Ctrl+D", icon: "fill", run: () => ctl.fillDirection("down") },
+    { label: "Fill Right", hint: "Ctrl+R", icon: "fill", run: () => ctl.fillDirection("right") },
+    { label: "Fill Series", icon: "series", run: d("series") },
+    { label: "Paste Special", hint: "Ctrl+Alt+V", icon: "paste", run: d("pasteSpecial") },
+    { label: "Paste Values", hint: "Ctrl+Shift+V", icon: "pasteValues", run: () => ctl.paste("values") },
+    {
+      label: "Paste Transpose",
+      icon: "transpose",
+      run: () => ctl.pasteSpecial({ what: "all", operation: "none", skipBlanks: false, transpose: true }),
+    },
+    { label: "Paste Link", icon: "link", run: () => ctl.pasteSpecial({ what: "link", operation: "none", skipBlanks: false, transpose: false }) },
+    { label: "Create Names from Selection", hint: "Ctrl+Shift+F3", icon: "tag", run: d("createNames") },
+    { label: "Paste Name", hint: "F3", icon: "tag", run: d("pasteName") },
+    { label: "Pick From Drop-down List", hint: "Alt+Down", icon: "list", run: () => ctl.showPickList() },
+    { label: "Repeat Last Action", hint: "F4", icon: "redo", run: () => ctl.repeatLast() },
+    { label: "Select Current Region", hint: "Ctrl+Shift+*", icon: "table", run: () => ctl.selectCurrentRegion() },
+    { label: "Go To Precedents", hint: "Ctrl+[", icon: "goto", run: () => ctl.goToPrecedents() },
+    { label: "Zoom In", hint: "Ctrl+Alt+=", icon: "zoom", run: () => ctl.zoomStep(1) },
+    { label: "Zoom Out", hint: "Ctrl+Alt+-", icon: "zoom", run: () => ctl.zoomStep(-1) },
     ...MOST_USED.map((f) => ({ label: `Insert ${f} function`, icon: "fx", run: () => ctl.insertFunction(f) })),
   ];
 }
@@ -227,6 +247,17 @@ export function WorkbookView({ info }: { info: WorkbookInfo }) {
           setBackstage("print");
           return;
         }
+        if (name === "contextMenu") {
+          // Shift+F10 / the Menu key: open the cell menu at the active cell
+          const canvas = document.querySelector(".grid-canvas");
+          if (!canvas) return;
+          const cr = canvas.getBoundingClientRect();
+          const { r, c } = ctl.sel.active;
+          const x = cr.left + Math.min(Math.max(ctl.colX(c) + ctl.cols.size(c) / 2, ctl.originX), ctl.viewport.width - 20);
+          const y = cr.top + Math.min(Math.max(ctl.rowY(r) + ctl.rows.size(r), ctl.originY), ctl.viewport.height - 20);
+          setCtxMenu({ x, y, kind: "cell" });
+          return;
+        }
         setDialog({ name, props });
       },
       backstage: (page) => {
@@ -267,6 +298,38 @@ export function WorkbookView({ info }: { info: WorkbookInfo }) {
       })
       .then((u) => (unlisten = u));
     return () => unlisten?.();
+  }, [ctl]);
+
+  // Alt pressed and released on its own, or F10, shows the ribbon KeyTips
+  useEffect(() => {
+    let altAlone = false;
+    const onDown = (e: KeyboardEvent) => {
+      if (e.key === "Alt") {
+        altAlone = !e.repeat && !e.ctrlKey && !e.shiftKey && !e.metaKey;
+        return;
+      }
+      altAlone = false;
+      if (e.key === "F10" && !e.shiftKey && !e.ctrlKey && !e.altKey && !ctl.keyTips && !ctl.edit) {
+        e.preventDefault();
+        ctl.setKeyTips("tabs");
+      }
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if (e.key !== "Alt" || !altAlone) return;
+      altAlone = false;
+      e.preventDefault();
+      if (ctl.edit || document.querySelector(".dialog-backdrop, .backstage-overlay")) return;
+      ctl.setKeyTips(ctl.keyTips ? null : "tabs");
+    };
+    const reset = () => (altAlone = false);
+    window.addEventListener("keydown", onDown, true);
+    window.addEventListener("keyup", onUp, true);
+    window.addEventListener("mousedown", reset, true);
+    return () => {
+      window.removeEventListener("keydown", onDown, true);
+      window.removeEventListener("keyup", onUp, true);
+      window.removeEventListener("mousedown", reset, true);
+    };
   }, [ctl]);
 
   // Ctrl+F1 toggles the ribbon, Ctrl+Shift+U the formula bar; other shortcuts when focus is outside the grid

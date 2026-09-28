@@ -827,3 +827,59 @@ fn flash_fill_names() {
     // Without an example there is nothing to learn from
     assert!(s.flash_fill(0, 1, 3).is_err());
 }
+
+#[test]
+fn paste_special_options() {
+    use super::PasteSpecial;
+    let mut s = session();
+    let opts = |what: &str, op: &str, skip: bool, transpose: bool| PasteSpecial {
+        what: what.into(),
+        operation: op.into(),
+        skip_blanks: skip,
+        transpose,
+    };
+    // A1:B2 = 1, 2 / =A1*10, (blank)
+    s.set_input(0, 1, 1, "1", true).unwrap();
+    s.set_input(0, 1, 2, "2", true).unwrap();
+    s.set_input(0, 2, 1, "=A1*10", true).unwrap();
+    s.apply_style(0, Rect::new(1, 1, 2, 2), &StylePatch { bold: Some(true), ..Default::default() }).unwrap();
+    let clip = s.copy(0, Rect::new(1, 1, 2, 2), false).unwrap();
+
+    // Transpose: rows become columns, the formula still points at its source cell
+    let out = s.paste_special(0, Rect::cell(5, 1), &clip, &opts("all", "none", false, true)).unwrap();
+    assert_eq!(out, Rect::new(5, 1, 6, 2));
+    assert_eq!(column(&s, 5, 6, 1), ["1", "2"]);
+    assert_eq!(s.cell_info(0, 5, 2).unwrap().content, "=A5*10");
+    assert_eq!(text(&s, 5, 2), "10");
+    assert!(s.cell_info(0, 6, 1).unwrap().style.bold);
+
+    // Values only keep the target's format
+    s.paste_special(0, Rect::cell(10, 1), &clip, &opts("values", "none", false, false)).unwrap();
+    assert_eq!(s.cell_info(0, 11, 1).unwrap().content, "10");
+    assert!(!s.cell_info(0, 10, 1).unwrap().style.bold);
+
+    // Formats only keep the target's values
+    s.set_input(0, 20, 1, "x", true).unwrap();
+    s.paste_special(0, Rect::cell(20, 1), &clip, &opts("formats", "none", false, false)).unwrap();
+    assert_eq!(text(&s, 20, 1), "x");
+    assert!(s.cell_info(0, 20, 1).unwrap().style.bold);
+
+    // Multiply into existing numbers; skip blanks keeps what is under empty cells
+    s.set_input(0, 30, 1, "5", true).unwrap();
+    s.set_input(0, 30, 2, "7", true).unwrap();
+    s.set_input(0, 31, 2, "keep", true).unwrap();
+    s.paste_special(0, Rect::cell(30, 1), &clip, &opts("values", "multiply", true, false)).unwrap();
+    // A blank target counts as 0, like Excel
+    assert_eq!(column(&s, 30, 31, 1), ["5", "0"]);
+    assert_eq!(text(&s, 30, 2), "14");
+    assert_eq!(text(&s, 31, 2), "keep");
+
+    // Paste Link refers back to the copied cells
+    s.paste_special(0, Rect::cell(40, 1), &clip, &opts("link", "none", false, false)).unwrap();
+    assert_eq!(s.cell_info(0, 40, 2).unwrap().content, "=B1");
+    assert_eq!(text(&s, 41, 1), "10");
+
+    // One undo step per paste
+    s.undo().unwrap();
+    assert_eq!(text(&s, 40, 1), "");
+}

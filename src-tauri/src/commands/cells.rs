@@ -6,7 +6,7 @@ use crate::{
     engine::{
         a1::Rect,
         dto::{CellInfo, CellsChunk, SelectionStats, StylePatch, WorkbookInfo},
-        DefinedNameDto, FillMode, FillReport, FindOptions, FlashFillResult, FoundCell, SeriesSpec, SortKey,
+        DefinedNameDto, FillMode, FillReport, FindOptions, FlashFillResult, FoundCell, PasteSpecial, SeriesSpec, SortKey,
     },
     error::{AppError, AppResult},
     state::AppState,
@@ -247,6 +247,49 @@ pub fn clipboard_paste(
             Ok(PasteResult { info, rect: pasted, source_book: None })
         }
     }
+}
+
+/// Home → Paste → Paste Special (Ctrl+Alt+V).
+#[tauri::command(async)]
+pub fn clipboard_paste_special(
+    state: State<'_, AppState>,
+    book: String,
+    sheet: u32,
+    rect: Rect,
+    options: PasteSpecial,
+    text: Option<String>,
+) -> AppResult<PasteResult> {
+    let internal = {
+        let clip = state.clipboard.lock().unwrap();
+        match (&*clip, &text) {
+            (Some(c), Some(t)) if normalize_text(t) == normalize_text(&c.text) => Some(c.clone()),
+            (Some(c), None) => Some(c.clone()),
+            _ => None,
+        }
+    };
+    let target = norm(rect);
+    let pasted = match internal {
+        Some(clip) => state.with(&book, |s| s.paste_special(sheet, target, &clip, &options))?,
+        None => {
+            // Text from another application: only its values exist
+            let text = text.ok_or_else(|| AppError::Invalid("Nothing to paste.".into()))?;
+            let text = if options.transpose { transpose_tsv(&text) } else { text };
+            state.with(&book, |s| s.paste_text(sheet, target, &text))?
+        }
+    };
+    let info = state.read(&book, |s| Ok(s.info()))?;
+    Ok(PasteResult { info, rect: pasted, source_book: None })
+}
+
+/// Swaps rows and columns of tab separated text.
+fn transpose_tsv(text: &str) -> String {
+    let normalized = text.replace("\r\n", "\n");
+    let rows: Vec<Vec<&str>> = normalized.trim_end_matches('\n').split('\n').map(|l| l.split('\t').collect()).collect();
+    let width = rows.iter().map(Vec::len).max().unwrap_or(0);
+    (0..width)
+        .map(|j| rows.iter().map(|r: &Vec<&str>| r.get(j).copied().unwrap_or("")).collect::<Vec<_>>().join("\t"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 // ---------------------------------------------------------------------

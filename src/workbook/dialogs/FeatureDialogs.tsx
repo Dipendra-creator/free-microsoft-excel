@@ -2,7 +2,17 @@
 // workbook health check.
 
 import { useEffect, useMemo, useState } from "react";
-import { api, type ChartKind, type HealthReport, type Issue, type PivotSpec, type RangeValue, type SplitOptions } from "../../api";
+import {
+  api,
+  type ChartKind,
+  type HealthReport,
+  type Issue,
+  type PasteSpecialOptions,
+  type PivotSpec,
+  type RangeValue,
+  type SeriesSpec,
+  type SplitOptions,
+} from "../../api";
 import { Dialog } from "../../components/Dialog";
 import { Icon } from "../../components/Icon";
 import { cellName, colName, parseRange, rectName } from "../../lib/a1";
@@ -315,6 +325,181 @@ export function TextToColumnsDialog({ ctl, onClose }: { ctl: WorkbookController;
           </tbody>
         </table>
       </div>
+    </Dialog>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Paste Special (Ctrl+Alt+V)
+// ----------------------------------------------------------------------
+
+const PASTE_WHAT: [PasteSpecialOptions["what"], string][] = [
+  ["all", "All"],
+  ["formulas", "Formulas"],
+  ["values", "Values"],
+  ["formats", "Formats"],
+  ["allExceptBorders", "All except borders"],
+  ["columnWidths", "Column widths"],
+  ["formulasAndNumberFormats", "Formulas and number formats"],
+  ["valuesAndNumberFormats", "Values and number formats"],
+];
+
+const PASTE_OPS: [PasteSpecialOptions["operation"], string][] = [
+  ["none", "None"],
+  ["add", "Add"],
+  ["subtract", "Subtract"],
+  ["multiply", "Multiply"],
+  ["divide", "Divide"],
+];
+
+export function PasteSpecialDialog({ ctl, onClose }: { ctl: WorkbookController; onClose: () => void }) {
+  const [what, setWhat] = useState<PasteSpecialOptions["what"]>("all");
+  const [operation, setOperation] = useState<PasteSpecialOptions["operation"]>("none");
+  const [skipBlanks, setSkipBlanks] = useState(false);
+  const [transpose, setTranspose] = useState(false);
+  const run = (options: PasteSpecialOptions) => {
+    onClose();
+    ctl.pasteSpecial(options);
+  };
+  const widths = what === "columnWidths";
+  return (
+    <Dialog
+      title="Paste Special"
+      onClose={onClose}
+      width={460}
+      onSubmit={() => run({ what, operation: widths ? "none" : operation, skipBlanks, transpose: widths ? false : transpose })}
+      footer={
+        <>
+          <button type="button" className="btn" onClick={() => run({ what: "link", operation: "none", skipBlanks: false, transpose: false })}>
+            Paste Link
+          </button>
+          <span className="spacer" />
+          <button type="submit" className="btn primary">
+            OK
+          </button>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+        </>
+      }
+    >
+      {!ctl.clip && (
+        <p className="muted small">The clipboard holds text from another program: only its values can be pasted (Transpose works too).</p>
+      )}
+      <fieldset>
+        <legend>Paste</legend>
+        <div className="ps-grid">
+          {PASTE_WHAT.map(([v, label]) => (
+            <label key={v} className="fc-row check">
+              <input type="radio" name="ps-what" checked={what === v} onChange={() => setWhat(v)} /> {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className={widths ? "disabled" : ""}>
+        <legend>Operation</legend>
+        <div className="ps-grid">
+          {PASTE_OPS.map(([v, label]) => (
+            <label key={v} className="fc-row check">
+              <input type="radio" name="ps-op" disabled={widths} checked={operation === v} onChange={() => setOperation(v)} /> {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="ps-grid">
+        <label className="fc-row check">
+          <input type="checkbox" checked={skipBlanks} disabled={widths} onChange={(e) => setSkipBlanks(e.target.checked)} /> Skip blanks
+        </label>
+        <label className="fc-row check">
+          <input type="checkbox" checked={transpose} disabled={widths} onChange={(e) => setTranspose(e.target.checked)} /> Transpose
+        </label>
+      </div>
+    </Dialog>
+  );
+}
+
+// ----------------------------------------------------------------------
+// Home → Fill → Series
+// ----------------------------------------------------------------------
+
+export function SeriesDialog({ ctl, onClose }: { ctl: WorkbookController; onClose: () => void }) {
+  const r = ctl.range;
+  const [inRows, setInRows] = useState(r.c2 - r.c1 > r.r2 - r.r1);
+  const [kind, setKind] = useState<SeriesSpec["kind"]>(() => {
+    const fmt = ctl.activeInfo?.style.numFmt ?? "";
+    return /[dy]/i.test(fmt.replace(/"[^"]*"|\[[^\]]*\]/g, "")) ? "date" : "linear";
+  });
+  const [unit, setUnit] = useState<SeriesSpec["unit"]>("day");
+  const [trend, setTrend] = useState(false);
+  const [step, setStep] = useState("1");
+  const [stop, setStop] = useState("");
+  const stepValue = Number(step);
+  const stopValue = stop.trim() === "" ? null : Number(stop);
+  const invalid = (!trend && kind !== "autofill" && !Number.isFinite(stepValue)) || (stopValue !== null && !Number.isFinite(stopValue));
+  const radio = <T extends string>(value: T, current: T, set: (v: T) => void, label: string, disabled = false) => (
+    <label className={`fc-row check${disabled ? " disabled" : ""}`}>
+      <input type="radio" checked={current === value} disabled={disabled} onChange={() => set(value)} /> {label}
+    </label>
+  );
+  return (
+    <Dialog
+      title="Series"
+      onClose={onClose}
+      width={420}
+      onSubmit={() => {
+        if (invalid) return;
+        onClose();
+        ctl.fillSeries({ inRows, kind, unit, step: Number.isFinite(stepValue) ? stepValue : 1, stop: stopValue, trend });
+      }}
+      footer={
+        <>
+          <button type="submit" className="btn primary" disabled={invalid}>
+            OK
+          </button>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+        </>
+      }
+    >
+      <div className="series-grid">
+        <fieldset>
+          <legend>Series in</legend>
+          {radio("rows", inRows ? "rows" : "cols", () => setInRows(true), "Rows")}
+          {radio("cols", inRows ? "rows" : "cols", () => setInRows(false), "Columns")}
+        </fieldset>
+        <fieldset>
+          <legend>Type</legend>
+          {radio("linear", kind, setKind, "Linear")}
+          {radio("growth", kind, setKind, "Growth")}
+          {radio("date", kind, setKind, "Date")}
+          {radio("autofill", kind, setKind, "AutoFill")}
+        </fieldset>
+        <fieldset>
+          <legend>Date unit</legend>
+          {radio("day", unit, setUnit, "Day", kind !== "date")}
+          {radio("weekday", unit, setUnit, "Weekday", kind !== "date")}
+          {radio("month", unit, setUnit, "Month", kind !== "date")}
+          {radio("year", unit, setUnit, "Year", kind !== "date")}
+        </fieldset>
+      </div>
+      <label className="fc-row check">
+        <input type="checkbox" checked={trend} disabled={kind === "date" || kind === "autofill"} onChange={(e) => setTrend(e.target.checked)} /> Trend
+      </label>
+      <div className="series-values">
+        <label className="fc-row">
+          <span className="lbl">Step value:</span>
+          <input value={step} disabled={kind === "autofill"} onChange={(e) => setStep(e.target.value)} autoFocus />
+        </label>
+        <label className="fc-row">
+          <span className="lbl">Stop value:</span>
+          <input value={stop} disabled={kind === "autofill"} onChange={(e) => setStop(e.target.value)} />
+        </label>
+      </div>
+      <p className="muted small">
+        The first cell of each {inRows ? "row" : "column"} in {rectName(r)} starts the series
+        {r.r1 === r.r2 && r.c1 === r.c2 ? "; with one cell selected, it continues up to the stop value." : "."}
+      </p>
     </Dialog>
   );
 }

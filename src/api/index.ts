@@ -6,12 +6,16 @@ import type {
   AppInfo,
   BookWindow,
   ChartSpec,
+  FillMode,
+  FillReport,
   FilterValue,
+  FlashFillResult,
   HealthReport,
   Note,
   PivotSpec,
   RangeValue,
   RecoveryItem,
+  SeriesSpec,
   SplitOptions,
   VersionItem,
   CellInfo,
@@ -22,6 +26,7 @@ import type {
   FoundCell,
   OpenResult,
   PasteResult,
+  PasteSpecialOptions,
   RecentItem,
   Rect,
   SelectionStats,
@@ -149,6 +154,8 @@ export const api = {
   clearClipboard: () => mut<void>("clipboard_clear"),
   paste: (book: Book, sheet: number, rect: Rect, mode: string, text: string | null) =>
     mut<PasteResult>("clipboard_paste", { book, sheet, rect, mode, text }),
+  pasteSpecial: (book: Book, sheet: number, rect: Rect, options: PasteSpecialOptions, text: string | null) =>
+    mut<PasteResult>("clipboard_paste_special", { book, sheet, rect, options, text }),
 
   // Data
   currentRegion: (book: Book, sheet: number, row: number, col: number) =>
@@ -157,8 +164,14 @@ export const api = {
     mut<WorkbookInfo>("range_insert_cells", { book, sheet, rect, shift }),
   deleteCells: (book: Book, sheet: number, rect: Rect, shift: "up" | "left") =>
     mut<WorkbookInfo>("range_delete_cells", { book, sheet, rect, shift }),
-  fill: (book: Book, sheet: number, source: Rect, target: Rect) =>
-    mut<WorkbookInfo>("range_fill", { book, sheet, source, target }),
+  fill: (book: Book, sheet: number, source: Rect, target: Rect, mode: FillMode = "auto") =>
+    mut<[FillReport, WorkbookInfo]>("range_fill", { book, sheet, source, target, mode }),
+  fillExtent: (book: Book, sheet: number, source: Rect) =>
+    invoke<number | null>("range_fill_extent", { book, sheet, source }),
+  fillSeries: (book: Book, sheet: number, rect: Rect, spec: SeriesSpec) =>
+    mut<[Rect, WorkbookInfo]>("range_fill_series", { book, sheet, rect, spec }),
+  flashFill: (book: Book, sheet: number, row: number, col: number) =>
+    mut<[FlashFillResult, WorkbookInfo]>("range_flash_fill", { book, sheet, row, col }),
   sort: (book: Book, sheet: number, rect: Rect, keys: SortKey[], hasHeader: boolean) =>
     mut<WorkbookInfo>("range_sort", { book, sheet, rect, keys, hasHeader }),
   removeDuplicates: (book: Book, sheet: number, rect: Rect, columns: number[], hasHeader: boolean) =>

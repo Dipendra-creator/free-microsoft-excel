@@ -339,6 +339,16 @@ impl Session {
         Ok(seed)
     }
 
+    /// The input that recreates a cell exactly (formula, full-precision number,
+    /// quoted text), or None for an empty cell.
+    pub(super) fn cell_input(&self, sheet: u32, row: i32, col: i32) -> AppResult<Option<String>> {
+        let seed = self.read_seed(sheet, row, col)?;
+        if seed.formula {
+            return Ok(Some(self.m().get_localized_cell_content(sheet, row, col)?));
+        }
+        Ok(copy_input(&seed.value))
+    }
+
     /// Double-clicking the fill handle: the last row to fill down to, from the
     /// data in the column next to the selection (left first, then right).
     pub fn fill_extent(&self, sheet: u32, source: Rect) -> AppResult<Option<i32>> {
@@ -476,13 +486,8 @@ impl Session {
         for r in block.r1..=block.r2 {
             for c in block.c1..=block.c2 {
                 if !written.contains(&(r, c)) {
-                    let seed = self.read_seed(sheet, r, c)?;
-                    let text = if seed.formula {
-                        Some(self.m().get_localized_cell_content(sheet, r, c)?)
-                    } else {
-                        copy_input(&seed.value)
-                    };
-                    all.push((r, c, text, seed.style));
+                    let text = self.cell_input(sheet, r, c)?;
+                    all.push((r, c, text, self.m().get_style_for_cell(sheet, r, c)?));
                 }
             }
         }
@@ -539,13 +544,10 @@ impl Session {
         };
         let mut cells = Vec::new();
         for r in r1..=r2 {
-            let style = model.get_style_for_cell(sheet, r, col)?;
+            let style = self.m().get_style_for_cell(sheet, r, col)?;
             let text = match outputs.get(&r) {
                 Some(o) => Some(format!("'{o}")),
-                None => {
-                    let content = model.get_localized_cell_content(sheet, r, col)?;
-                    (!content.is_empty()).then_some(content)
-                }
+                None => self.cell_input(sheet, r, col)?,
             };
             cells.push((r, col, text, style));
         }

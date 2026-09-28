@@ -7,7 +7,18 @@ import { CATEGORIES, FUNCTIONS, MOST_USED } from "../../lib/functions";
 import { CF_PRESETS } from "../../lib/galleries";
 import type { WorkbookController } from "../controller";
 import { addRule } from "../menus";
-import { ChartDialog, HealthCheckDialog, LinkDialog, NoteDialog, PivotDialog, SwitchWindowsDialog, TextToColumnsDialog } from "./FeatureDialogs";
+import {
+  ChartDialog,
+  HealthCheckDialog,
+  LinkDialog,
+  NoteDialog,
+  PasteSpecialDialog,
+  PivotDialog,
+  SeriesDialog,
+  SwitchWindowsDialog,
+  TextToColumnsDialog,
+} from "./FeatureDialogs";
+import { CreateNamesDialog, PasteNameDialog, ShortcutsDialog } from "./Shortcuts";
 import { FormatCellsDialog } from "./FormatCells";
 
 export interface DialogState {
@@ -44,6 +55,7 @@ function FindReplace({ ctl, tab: initial, onClose }: { ctl: WorkbookController; 
   }, [query, opts]);
 
   const search = async () => {
+    ctl.lastFind = { query, options: opts };
     const found = await api.findAll(ctl.id, ctl.sheet, query, opts);
     setResults(found);
     if (!found.length) setMessage("We couldn't find what you were looking for.");
@@ -867,37 +879,6 @@ function Stats({ ctl, onClose }: { ctl: WorkbookController; onClose: () => void 
   );
 }
 
-const SHORTCUTS: [string, string][] = [
-  ["Ctrl+N / Ctrl+O / Ctrl+S", "New / Open / Save"],
-  ["F12", "Save As"],
-  ["Ctrl+Z / Ctrl+Y", "Undo / Redo"],
-  ["Ctrl+C / Ctrl+X / Ctrl+V", "Copy / Cut / Paste"],
-  ["F2", "Edit the active cell"],
-  ["Alt+Enter", "New line in a cell"],
-  ["Ctrl+Enter", "Fill the selection with the current entry"],
-  ["F4 (editing)", "Toggle absolute / relative references"],
-  ["Ctrl+Arrow", "Move to the edge of the data region"],
-  ["Ctrl+Shift+Arrow", "Extend the selection to the edge of the data"],
-  ["Ctrl+Home / Ctrl+End", "Go to A1 / last used cell"],
-  ["Ctrl+Space / Shift+Space", "Select column / row"],
-  ["Ctrl+A", "Select all"],
-  ["Ctrl+B / Ctrl+I / Ctrl+U", "Bold / Italic / Underline"],
-  ["Ctrl+5", "Strikethrough"],
-  ["Ctrl+1", "Format Cells"],
-  ["Ctrl+Shift+$ / % / #", "Currency / Percent / Date format"],
-  ["Ctrl+; / Ctrl+Shift+;", "Insert date / time"],
-  ["Alt+=", "AutoSum"],
-  ["Ctrl+D / Ctrl+R", "Fill down / right"],
-  ["Ctrl++ / Ctrl+-", "Insert / delete cells"],
-  ["Ctrl+9 / Ctrl+0", "Hide rows / columns"],
-  ["Ctrl+F / Ctrl+H / Ctrl+G", "Find / Replace / Go To"],
-  ["Ctrl+`", "Show formulas"],
-  ["Ctrl+PageUp / PageDown", "Previous / next sheet"],
-  ["Shift+F11", "Insert sheet"],
-  ["Shift+F3", "Insert function"],
-  ["F9", "Calculate now"],
-  ["Ctrl+Mouse wheel", "Zoom"],
-];
 
 // ----------------------------------------------------------------------
 
@@ -994,6 +975,10 @@ export function DialogHost({ ctl, state, onClose }: { ctl: WorkbookController; s
       return <HealthCheckDialog ctl={ctl} onClose={onClose} />;
     case "switchWindows":
       return <SwitchWindowsDialog ctl={ctl} onClose={onClose} />;
+    case "series":
+      return <SeriesDialog ctl={ctl} onClose={onClose} />;
+    case "pasteSpecial":
+      return <PasteSpecialDialog ctl={ctl} onClose={onClose} />;
     case "insertCells":
       return (
         <Choice
@@ -1093,18 +1078,11 @@ export function DialogHost({ ctl, state, onClose }: { ctl: WorkbookController; s
     case "symbol":
       return <SymbolDialog ctl={ctl} onClose={onClose} />;
     case "shortcuts":
-      return (
-        <Info title="Keyboard Shortcuts" onClose={onClose}>
-          <div className="shortcut-list">
-            {SHORTCUTS.map(([k, d]) => (
-              <div key={k}>
-                <kbd>{k}</kbd>
-                <span>{d}</span>
-              </div>
-            ))}
-          </div>
-        </Info>
-      );
+      return <ShortcutsDialog onClose={onClose} />;
+    case "pasteName":
+      return <PasteNameDialog ctl={ctl} onClose={onClose} />;
+    case "createNames":
+      return <CreateNamesDialog ctl={ctl} onClose={onClose} />;
     case "about":
       return (
         <Info title="About Sheets" onClose={onClose}>
