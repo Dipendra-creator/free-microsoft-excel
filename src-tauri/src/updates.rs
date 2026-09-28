@@ -11,6 +11,9 @@
 //! * **Unsigned releases.** When a newer release has no signed update files,
 //!   it is still announced (from the GitHub releases API) and the Update
 //!   button opens its download page instead.
+//! * **Portable copy.** The portable Windows .exe is not an installed app: the
+//!   updater would run the setup program and install a second copy. Updates
+//!   are announced there too, but downloaded by hand.
 //!
 //! Before an update restarts the app, every workbook with unsaved changes is
 //! kept and offered again on the start screen afterwards.
@@ -63,6 +66,8 @@ pub struct UpdateStatus {
     /// Installs from inside the app (signed update); otherwise `page` is
     /// opened to download it.
     pub installable: bool,
+    /// Running the portable Windows .exe: updates are downloaded by hand.
+    pub portable: bool,
     /// Release page.
     pub page: Option<String>,
     pub downloaded: u64,
@@ -83,7 +88,7 @@ pub struct Updates {
 impl Updates {
     pub fn new(current: String, updated_from: Option<String>) -> Updates {
         Updates {
-            status: Mutex::new(UpdateStatus { current, updated_from, ..Default::default() }),
+            status: Mutex::new(UpdateStatus { current, updated_from, portable: portable(), ..Default::default() }),
             pending: Mutex::new(None),
             bytes: Mutex::new(None),
         }
@@ -113,6 +118,18 @@ impl Updates {
 
 fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
+}
+
+/// Running a bare executable on Windows (the portable .exe) rather than a
+/// copy installed by the setup program or the MSI. The bundler marks the
+/// binary inside each installer with its type; the portable file is the
+/// unmarked build.
+fn portable() -> bool {
+    // Test hook for development builds
+    if cfg!(debug_assertions) && std::env::var_os("SHEETS_PORTABLE").is_some() {
+        return true;
+    }
+    cfg!(windows) && tauri::utils::platform::bundle_type().is_none()
 }
 
 /// `a` is newer than `b` (semantic versions, a leading "v" allowed).
@@ -211,14 +228,17 @@ pub async fn check(app: &AppHandle) -> UpdateStatus {
         let version = update.version.clone();
         let notes = update.body.clone().map(|b| whats_new(&b));
         let date = update.date.map(|d| d.unix_timestamp() * 1000);
-        *updates.pending.lock().unwrap() = Some(update.clone());
+        let installable = !updates.status().portable;
+        if installable {
+            *updates.pending.lock().unwrap() = Some(update.clone());
+        }
         return updates.set(app, |s| {
             s.phase = Phase::Available;
             s.page = Some(release_page(&version));
             s.version = Some(version);
             s.notes = notes;
             s.date = date;
-            s.installable = true;
+            s.installable = installable;
             s.downloaded = 0;
             s.total = None;
             s.checked_at = Some(now_ms());

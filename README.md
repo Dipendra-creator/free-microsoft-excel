@@ -31,7 +31,8 @@ Each release has separate downloads per platform:
 **Updates:** from version 0.4.0, Sheets tells you when a new version is out — an **Update
 available** button appears in the title bar; click it, then **Restart to update**. Workbooks
 with unsaved changes are kept and offered again after the restart. (Help → Check for Updates;
-turn automatic checks off in Options; the portable `.exe` updates by installing the regular version.)
+turn automatic checks off in Options. The portable `.exe` never installs anything: it shows the
+update and links to the new portable file.)
 Coming from 0.3.0 or earlier? Install 0.4.0 once from
 the Releases page.
 
