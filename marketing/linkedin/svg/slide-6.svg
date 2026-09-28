@@ -25,9 +25,9 @@
 <text x="72" y="232" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="72" font-weight="800" fill="#10231A" text-anchor="start" >Small. Fast.</text>
 <text x="72" y="318" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="72" font-weight="800" fill="#107C41" text-anchor="start" >Free.</text>
 <g filter="url(#soft)"><rect x="72" y="370" width="936" height="200" rx="24" fill="#107C41"/></g>
-<text x="112" y="492" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="96" font-weight="800" fill="#FFFFFF" text-anchor="start" >≈ 3 MB</text>
-<text x="470" y="456" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="28" font-weight="700" fill="#FFFFFF" text-anchor="start" >Windows installer (Mac: ≈ 4 MB).</text>
-<text x="470" y="496" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="26" font-weight="400" fill="#D8F3E4" text-anchor="start" >About 10 MB once installed —</text>
+<text x="112" y="492" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="96" font-weight="800" fill="#FFFFFF" text-anchor="start" >≈ 4 MB</text>
+<text x="470" y="456" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="28" font-weight="700" fill="#FFFFFF" text-anchor="start" >Windows installer (Mac: ≈ 5 MB).</text>
+<text x="470" y="496" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="26" font-weight="400" fill="#D8F3E4" text-anchor="start" >About 12 MB once installed —</text>
 <text x="470" y="532" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="26" font-weight="400" fill="#D8F3E4" text-anchor="start" >a native Rust engine, not a suite.</text>
 <g filter="url(#soft)"><rect x="72" y="604" width="936" height="556" rx="24" fill="#FFFFFF"/></g>
 <text x="104" y="654" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="20" font-weight="700" fill="#4F6358" text-anchor="start" ></text>
@@ -37,7 +37,7 @@
 <line x1="104" y1="680" x2="976" y2="680" stroke="#D8E4DC" stroke-width="2"/>
 <text x="104" y="738" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="700" fill="#10231A" text-anchor="start" >Disk space</text>
 <text x="360" y="738" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="21" font-weight="500" fill="#4F6358" text-anchor="start" >4 GB (Windows) · 10 GB (Mac)¹</text>
-<text x="852" y="738" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="25" font-weight="800" fill="#107C41" text-anchor="middle" >≈ 10 MB</text>
+<text x="852" y="738" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="25" font-weight="800" fill="#107C41" text-anchor="middle" >≈ 12 MB</text>
 <line x1="104" y1="776" x2="976" y2="776" stroke="#D8E4DC" stroke-width="2"/>
 <text x="104" y="834" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="700" fill="#10231A" text-anchor="start" >Price</text>
 <text x="360" y="834" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="21" font-weight="500" fill="#4F6358" text-anchor="start" >Subscription</text>
@@ -54,7 +54,7 @@
 <text x="104" y="1122" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="700" fill="#10231A" text-anchor="start" >Undo history</text>
 <text x="360" y="1122" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="21" font-weight="500" fill="#4F6358" text-anchor="start" >100 steps</text>
 <text x="852" y="1122" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="25" font-weight="800" fill="#107C41" text-anchor="middle" >Unlimited</text>
-<text x="72" y="1214" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="17" font-weight="500" fill="#4F6358" text-anchor="start" >¹ Microsoft 365 system requirements (Microsoft Support). Sheets figures: v0.3 installer and install size.</text>
+<text x="72" y="1214" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="17" font-weight="500" fill="#4F6358" text-anchor="start" >¹ Microsoft 365 system requirements (Microsoft Support). Sheets figures: v0.4 downloads and install size.</text>
 <line x1="72" y1="1238" x2="1008" y2="1238" stroke="#D8E4DC" stroke-width="2"/>
 <text x="72" y="1290" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif" font-size="24" font-weight="500" fill="#4F6358" text-anchor="start" >Free · Windows &amp; macOS · Opens and saves .xlsx</text>
 <rect x="876" y="1256" width="132" height="52" rx="26" fill="#107C41"/>

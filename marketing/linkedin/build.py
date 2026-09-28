@@ -215,7 +215,7 @@ def slide1():
 {text(96, 211, "FREE SPREADSHEET · WINDOWS & macOS", 22, 700, MINT, extra='letter-spacing="2"')}
 {text(72, 340, "Excel files.", 104, 800, "#FFFFFF")}
 {text(72, 458, "Zero cost.", 104, 800, "#FFFFFF")}
-{text(72, 576, "Under 5 MB.", 104, 800, MINT)}
+{text(72, 576, "About 5 MB.", 104, 800, MINT)}
 {text(72, 648, "Meet Sheets — a free spreadsheet app that opens and", 32, 400, "#D8F3E4")}
 {text(72, 692, "saves your .xlsx files. No subscription. No account.", 32, 400, "#D8F3E4")}
 {window}
@@ -418,13 +418,13 @@ def slide6():
     parts.append(text(72, 318, "Free.", 72, 800, G2))
     # big stat
     parts.append(f'<g filter="url(#soft)"><rect x="72" y="370" width="936" height="200" rx="24" fill="{G2}"/></g>')
-    parts.append(text(112, 492, "≈ 3 MB", 96, 800, "#FFFFFF"))
-    parts.append(text(470, 456, "Windows installer (Mac: ≈ 4 MB).", 28, 700, "#FFFFFF"))
-    parts.append(text(470, 496, "About 10 MB once installed —", 26, 400, "#D8F3E4"))
+    parts.append(text(112, 492, "≈ 4 MB", 96, 800, "#FFFFFF"))
+    parts.append(text(470, 456, "Windows installer (Mac: ≈ 5 MB).", 28, 700, "#FFFFFF"))
+    parts.append(text(470, 496, "About 12 MB once installed —", 26, 400, "#D8F3E4"))
     parts.append(text(470, 532, "a native Rust engine, not a suite.", 26, 400, "#D8F3E4"))
     # comparison
     rows = [
-        ("Disk space", "4 GB (Windows) · 10 GB (Mac)¹", "≈ 10 MB"),
+        ("Disk space", "4 GB (Windows) · 10 GB (Mac)¹", "≈ 12 MB"),
         ("Price", "Subscription", "Free"),
         ("Sign-in", "Microsoft account", "No account"),
         ("AutoRecover", "Every 10 minutes (default)", "Every 30 seconds"),
@@ -444,7 +444,7 @@ def slide6():
         for j, l in enumerate(ms_lines[:2]):
             parts.append(text(360, ry + (48 if len(ms_lines) > 1 else 58) + j * 27, l, 21, 500, MUTED))
         parts.append(text(852, ry + 58, us, 25, 800, G2, "middle"))
-    parts.append(text(72, 1214, "¹ Microsoft 365 system requirements (Microsoft Support). Sheets figures: v0.3 installer and install size.", 17, 500, MUTED))
+    parts.append(text(72, 1214, "¹ Microsoft 365 system requirements (Microsoft Support). Sheets figures: v0.4 downloads and install size.", 17, 500, MUTED))
     parts.append(footer())
     return svg(1080, 1350, "\n".join(parts))
 
@@ -485,7 +485,7 @@ def banner():
 {text(60, 212, "A free spreadsheet", 50, 800, "#FFFFFF")}
 {text(60, 272, "that opens your", 50, 800, "#FFFFFF")}
 {text(60, 332, "Excel files.", 50, 800, MINT)}
-{text(60, 392, "Windows & macOS · under 5 MB · No account", 24, 600, "#D8F3E4")}
+{text(60, 392, "Windows & macOS · about 5 MB · No account", 24, 600, "#D8F3E4")}
 {text(60, 430, "Never silently changes or loses your data.", 24, 400, "#D8F3E4")}
 <rect x="60" y="476" width="360" height="60" rx="30" fill="{MINT}"/>
 {text(240, 515, "Download free →", 26, 800, G1, "middle")}

@@ -17,7 +17,7 @@ Files in this folder:
 
 ```
 Microsoft 365 needs 4 GB of disk space and a subscription.
-I built a free spreadsheet that downloads in under 5 MB — and opens your Excel files. 👇
+I built a free spreadsheet that's about a 5 MB download — and opens your Excel files. 👇
 
 Meet Sheets, a desktop spreadsheet for Windows and macOS.
 
@@ -75,7 +75,7 @@ Source code, roadmap and issue tracker: https://github.com/Dipendra-creator/free
 ## 3. Short version (if you prefer a tight post)
 
 ```
-I built a free alternative to Excel. It downloads in under 5 MB.
+I built a free alternative to Excel. It's about a 5 MB download.
 
 Sheets opens and saves your .xlsx files, has ~490 Excel functions (XLOOKUP included), charts, PivotTables, Flash Fill and all the shortcuts you know — on Windows and macOS.
 
@@ -116,7 +116,7 @@ If your hands know Excel shortcuts, they already know Sheets.
 
 Ctrl+D, Ctrl+R, F4, Ctrl+Shift+L, Alt+=, Ctrl+Alt+V — and Alt KeyTips (Alt, H, 1 is still Bold). Plus Flash Fill, Paste Special with Transpose and Multiply, AutoFill options, XLOOKUP and PivotTable summaries.
 
-Free, under 5 MB, Windows and macOS. Link in the comments. #Finance #DataAnalysis #Excel
+Free, about 5 MB, Windows and macOS. Link in the comments. #Finance #DataAnalysis #Excel
 ```
 
 **Researchers** (image: `slide-2.png`)
@@ -140,12 +140,12 @@ Free, Windows and macOS. Link in the comments. #Productivity #Excel
 
 ## 5. Image alt text (LinkedIn: "Alt text" on each image)
 
-1. Sheets cover: "Excel files. Zero cost. Under 5 MB." above a screenshot of the Sheets app showing a personal monthly budget with a chart.
+1. Sheets cover: "Excel files. Zero cost. About 5 MB." above a screenshot of the Sheets app showing a personal monthly budget with a chart.
 2. Four examples of Excel changing data — 00501 becomes 501, a 16-digit card number loses its last digit, SEPT1 becomes 1-Sep, café becomes cafÃ© — while Sheets keeps each value exactly.
 3. Sheets safety features: AutoRecover every 30 seconds, "Don't Save" undoable for 7 days, 20 versions per file, crash-safe saves.
 4. Grid of 12 Sheets features: 490 functions, charts, PivotTables, filter and sort, conditional formats, Flash Fill, AutoFill Options, Paste Special, Excel shortcuts, Check Workbook, print and PDF, .xlsx and CSV.
 5. Who Sheets is for: students, small businesses, analysts, researchers, Mac users and IT teams.
-6. Comparison: about 3 MB download for Sheets versus 4 GB (Windows) or 10 GB (Mac) of disk space for Microsoft 365; free versus subscription; no account; AutoRecover every 30 seconds versus 10 minutes; unlimited undo versus 100 steps.
+6. Comparison: about 4 MB download for Sheets versus 4 GB (Windows) or 10 GB (Mac) of disk space for Microsoft 365; free versus subscription; no account; AutoRecover every 30 seconds versus 10 minutes; unlimited undo versus 100 steps.
 7. Try it free: download, open any .xlsx or CSV file, send feedback. Download link: github.com/Dipendra-creator/free-microsoft-excel.
 
 ## 6. Posting tips
