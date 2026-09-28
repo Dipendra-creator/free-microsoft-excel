@@ -64,8 +64,17 @@ drag & drop to open; opening a file while Sheets runs reuses the running app.
 crash-safe atomic saves, data-integrity guards (Options → *Data integrity*).
 
 **Editing** — in-cell and formula-bar editing, point mode with coloured references, function
-autocomplete and argument hints, F4 absolute references, fill handle and series, copy/paste
-with Paste Special, Format Painter, Find & Replace, Go To, unlimited undo/redo.
+autocomplete and argument hints, F4 absolute references, Format Painter, Find & Replace, Go To,
+unlimited undo/redo, AutoComplete and Alt+↓ pick lists.
+
+**AutoFill** — the fill handle works like Excel's: drag, Ctrl+drag or double-click it, then use
+the **AutoFill Options** button to switch between Copy Cells, Fill Series, Formatting Only,
+Without Formatting and Fill Days / Weekdays / Months / Years. Numbers, dates, `Item 1`, `1st`,
+`Q1`, month and day names continue as series; Home → Fill → Series… for step, stop and trend;
+**Flash Fill** (Ctrl+E) fills a column from an example.
+
+**Paste Special** — formulas, values, formats, column widths, Add/Subtract/Multiply/Divide,
+Skip blanks, Transpose and Paste Link (Ctrl+Alt+V); Ctrl+Shift+V pastes values.
 
 **Formatting** — fonts, colours, borders, alignment, wrap, merge, number formats with live
 preview, cell styles, Format as Table, conditional formatting (rules, data bars, colour scales,
@@ -93,6 +102,13 @@ controls and ⌘ shortcuts on the Mac.
 
 | | Windows | macOS |
 | --- | --- | --- |
+| KeyTips (ribbon by keyboard) | Alt or F10 | ⌥ or F10 |
+| Flash Fill | Ctrl+E | ⌘E |
+| Fill down / right | Ctrl+D / Ctrl+R | ⌘D / ⌘R |
+| Paste Special / values only | Ctrl+Alt+V / Ctrl+Shift+V | ⌥⌘V / ⇧⌘V |
+| Repeat last action | F4 or Ctrl+Y | F4 or ⌘Y |
+| Select data region, then sheet | Ctrl+A | ⌘A |
+| Pick from the column's entries | Alt+↓ | ⌥↓ |
 | Filter on/off | Ctrl+Shift+L | ⇧⌘L |
 | Insert chart | Alt+F1 | ⌥F1 |
 | New / edit note | Shift+F2 | ⇧F2 |
@@ -101,7 +117,8 @@ controls and ⌘ shortcuts on the Mac.
 | Print / PDF | Ctrl+P | ⌘P |
 | Search commands | Alt+Q | ⌥Q |
 
-All the common Excel shortcuts work too (Help → Keyboard Shortcuts).
+Excel's keyboard shortcuts work too — press **F1** (or Help → Keyboard Shortcuts) for the
+searchable list.
 
 ---
 

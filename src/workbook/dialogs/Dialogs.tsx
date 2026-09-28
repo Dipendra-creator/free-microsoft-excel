@@ -1089,8 +1089,9 @@ export function DialogHost({ ctl, state, onClose }: { ctl: WorkbookController; s
           <div className="about">
             <Icon name="logo" size={40} />
             <div>
-              <b>Sheets</b> — internal MVP
-              <p>Lightweight spreadsheet built with Rust (Tauri) and the IronCalc engine. Opens and saves .xlsx files compatible with Microsoft Excel.</p>
+              <b>Sheets</b>
+              <p>A free, lightweight spreadsheet that opens and saves Microsoft Excel .xlsx files, built with Rust (Tauri) and the IronCalc engine.</p>
+              <p className="muted small">github.com/Dipendra-creator/free-microsoft-excel</p>
             </div>
           </div>
         </Info>
@@ -1104,7 +1105,7 @@ export function DialogHost({ ctl, state, onClose }: { ctl: WorkbookController; s
     case "feedback":
       return (
         <Info title="Feedback" onClose={onClose}>
-          <p>Thanks for trying Sheets! Share feedback with the internal tools team.</p>
+          <p>Thanks for trying Sheets! Report bugs and ideas on GitHub: github.com/Dipendra-creator/free-microsoft-excel/issues</p>
         </Info>
       );
     case "print":
