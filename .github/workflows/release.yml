@@ -11,7 +11,8 @@ name: Release
 # In-app updates: when the TAURI_SIGNING_PRIVATE_KEY secret (and, if the key
 # has one, TAURI_SIGNING_PRIVATE_KEY_PASSWORD) is set, the installers are
 # signed and latest.json is published; installed copies of Sheets then offer
-# the update in their title bar.
+# the update in their title bar. Without the secret the build stops (see
+# "Enable signed in-app update files").
 
 on:
   push:
@@ -155,18 +156,25 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # In-app updates need the files signed with the project's update key
-      # (repository secret TAURI_SIGNING_PRIVATE_KEY). Without it the release
-      # is still built; the app then only announces it and links here.
+      # (repository secret TAURI_SIGNING_PRIVATE_KEY). Installed copies only
+      # update themselves from signed releases, so without the key the build
+      # fails and the release stays a draft: add the secret, then re-run the
+      # workflow. (Repository variable ALLOW_UNSIGNED_RELEASE=true builds an
+      # unsigned release anyway, e.g. in a fork; the app then only announces it.)
       - name: Enable signed in-app update files
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          ALLOW_UNSIGNED_RELEASE: ${{ vars.ALLOW_UNSIGNED_RELEASE }}
         run: |
           if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
             node -e "const f='src-tauri/tauri.conf.json';const fs=require('fs');const c=JSON.parse(fs.readFileSync(f,'utf8'));c.bundle.createUpdaterArtifacts=true;fs.writeFileSync(f,JSON.stringify(c,null,2))"
             echo "Update files will be signed."
-          else
+          elif [ "$ALLOW_UNSIGNED_RELEASE" = "true" ]; then
             echo "::warning::The TAURI_SIGNING_PRIVATE_KEY secret is not set, so this release can't be installed from inside the app (users are pointed to the download page instead)."
+          else
+            echo "::error::The TAURI_SIGNING_PRIVATE_KEY secret is not available to this workflow, so installed copies of Sheets could not update to this release. Add it under Settings → Secrets and variables → Actions → Repository secrets, then re-run this workflow."
+            exit 1
           fi
 
       - name: Build and upload installers
